@@ -32,8 +32,11 @@ export default function AboutPage() {
       <AppHeader />
       <section className="flex flex-col justify-start bg-white">
         <div
-          className="w-full h-60 sm:h-80 md:h-96 bg-cover bg-center mb-10"
-          style={{ backgroundImage: "url('https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1000&q=80')" }}
+          className="w-full h-60 sm:h-80 md:h-96 bg-cover bg-[position:50%_20%] mb-10"
+          style={{
+            backgroundImage:
+              "url('https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fbanner_hero.jpeg?alt=media&token=83011ded-d699-4af7-a74c-5c930c19870d')"
+          }}
         ></div>
 
         <div className="px-6">

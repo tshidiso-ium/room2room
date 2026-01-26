@@ -6,33 +6,109 @@ import Link from "next/link";
 
 const initialApartments = [
   {
-    id: "modern-loft",
-    title: "Modern Loft",
-    price: "1,500",
-    location: "New York, NY",
-    image: "https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1000&q=80",
+    id: "bachelor-birch-acres-1",
+    title: "Birch Acres",
+    price: "4,000",
+    location: "Birch Acres",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fmidrand%2FNoordwyk%2Fnoordwyk-bachelor-2.jpeg?alt=media&token=e1ceba16-d2aa-416d-bf99-c992e1339606",
+    bedrooms: '1 bedroom'
   },
   {
-    id: "downtown-apartment",
-    title: "Downtown Apartment",
-    price: "2,000",
-    location: "Los Angeles, CA",
-    image: "https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1000&q=80",
+    id: "bachelor-Noordwyk-midrand-1",
+    title: "Noordwyk bachelor",
+    price: "6,500",
+    location: "Midrand",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fmidrand%2FNoordwyk%2Fnoordwyk-bachelor-2.jpeg?alt=media&token=e1ceba16-d2aa-416d-bf99-c992e1339606",
+     bedrooms: '1 bedroom'
   },
   {
-    id: "cozy-studio",
-    title: "Cozy Studio",
-    price: "1,200",
-    location: "Austin, TX",
-    image: "https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1000&q=80",
+    id: "bachelor-Kempton-park-1",
+    title: "Kempton bachelor",
+    price: "5,500",
+    location: "Kempton Park",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fkempton-park-bachelor-1.jpeg?alt=media&token=fdfa830e-ed60-48e4-831f-cbe2fffaa8c6",
+    bedrooms: '1 bedroom'
   },
   {
-    id: "spacious-apartment",
-    title: "Spacious Apartment",
-    price: "2,200",
-    location: "Chicago, IL",
-    image: "https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1000&q=80",
+    id: 'hospital-view-bachelor-1',
+    title: 'hospital View Bachelor',
+    price: '3,000',
+    location: 'Hospital View',
+    image: 'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fhospital-view%2Fbachelor-id001%2Fhospitav-view-bachelor-1.jpeg?alt=media&token=e7483557-216a-44ad-9eb6-8c9222cbda4b',
+    bedrooms: '1 bedroom'
   },
+  {
+    id: '1-Room-Mayibuye',
+    title: 'Mayibuye Bachelor',
+    price: '2,500',
+    location: 'Mayibuye',
+    image: 'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fbanner_hero.jpeg?alt=media&token=83011ded-d699-4af7-a74c-5c930c19870d',
+    bedrooms: '1 bedroom'
+  },
+  {
+    id: "1-Room-Winnie",
+    title: "Winnie 1 Room",
+    price: "1,350",
+    location: "Winnie",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fwinnie-zone-1%2Fwinnie-zone-1-picture-1.webp?alt=media&token=09b519ff-8879-4271-bf50-e22e63bfcf85",
+     bedrooms: '1 bedroom'
+  },
+  {
+    id: "1-Room-eNtshonalanga",
+    title: "eNtshonalanga Bachelor",
+    price: "2,800",
+    location: "eNtshonalanga",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2FeNtshonalanga%2FeNtshonalanga-picture-1.webp?alt=media&token=5ebb8f40-35a3-4ca8-b45a-3d942a317584",
+     bedrooms: '1 bedroom'
+  },
+  {
+    id: "endulwini-cottage",
+    title: "eNdulwini Cottage",
+    price: "3,000",
+    location: "eNdulwini",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fendulwini%2Fendulwini-cottage-picture-1.webp?alt=media&token=69f4a41e-974a-4f0c-b16a-7dce9671ce8f",
+     bedrooms: '1 bedroom'
+  },
+  {
+    id: "hospital-view-1-room",
+    title: "Hospital View 1 Room",
+    price: "1,800",
+    location: "Hospital View",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fhospital-view%2Fhospital-view-picture-1.png?alt=media&token=77ad973c-c51a-4a30-a8c1-96ed2d438071",
+     bedrooms: '1 bedroom'
+  },
+  {
+    id: "thlamathlama-bachelor",
+    title: "thlamathlama bachelor",
+    price: "3,500",
+    location: "Thlamathlama",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fthlamathlama%2Fthlamathlama-bachelor-picture-3.png?alt=media&token=778a2d82-8f91-4b81-882f-01014c62ad0c",
+     bedrooms: '1 bedroom'
+  },
+    {
+    id: "1-Room-eNtshonalanga-2",
+    title: "eNtshonalanga 1 Room",
+    price: "1,300",
+    location: "eNtshonalanga",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2FeNtshonalanga%2FeNtshonalanga-1-room-id1-pic-1.jpeg?alt=media&token=d04f4071-321d-496e-b4a8-c09626d84300",
+     bedrooms: '1 bedroom'
+  },
+  {
+    id: "1-Room-difateng-id1",
+    title: "Difateng 1 Room",
+    price: "1,300",
+    location: "Difateng",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fdifateng%2Fdifateng-1-room-id1-pic-4.jpeg?alt=media&token=0c70a68b-0117-44ec-ab31-f53581cd4cb3",
+     bedrooms: '1 bedroom'
+  },
+  {
+    id: "bachelor-Makhulong-1",
+    title: "Makhulong bachelor",
+    price: "3,500",
+    location: "Makhulong",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2FMakhulong%2Fmakhulong-bachelor-5.jpeg?alt=media&token=0e000623-905e-49e9-8d69-3847b0d735ac",
+     bedrooms: '1 bedroom'
+  }
 ];
 
 export default function FeaturedApartments({ filters }) {
@@ -45,8 +121,9 @@ export default function FeaturedApartments({ filters }) {
       const matchesPrice = !filters.price ||
         (() => {
           const [min, max] = filters.price.split('-').map(Number);
-          return parseInt(apartment.price) >= min && parseInt(apartment.price) <= max;
+          return  parseInt((apartment.price).replace(/,/g, ''), 10) >= min &&  parseInt((apartment.price).replace(/,/g, ''), 10)<= max;
         })();
+      console.log("filter Bedrooms: ", filters.bedrooms);
       const matchesBedrooms = !filters.bedrooms || apartment.bedrooms === filters.bedrooms;
       return matchesLocation && matchesPrice && matchesBedrooms;
     });

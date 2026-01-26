@@ -25,13 +25,16 @@ export default function SearchBar({ onSearch }) {
   };
 
   return (
-    <section
-    className="flex justify-center text-center mb-10 px-4 min-h-[30vh] sm:min-h-[100vh] md:min-h-[50vh] bg-cover bg-center"
-    style={{ backgroundImage: "url('https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1000&q=80')" }}
-  >
+<section
+  className="flex justify-center text-center mb-10 px-4 min-h-[30vh] sm:min-h-[100vh] md:min-h-[50vh] bg-cover bg-[position:50%_30%]"
+  style={{
+    backgroundImage:
+      "url('https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fbanner_hero.jpeg?alt=media&token=83011ded-d699-4af7-a74c-5c930c19870d')"
+  }}
+>
     <div className="lg:my-auto my-10 sm:my-10 backdrop-blur-xl w-full max-w-3xl px-6 py-8 flex flex-col justify-center items-center rounded-lg shadow-md">
       <h1 className="text-3xl sm:text-4xl font-bold mb-6 transition-opacity duration-500 ease-in-out text-white drop-shadow">
-        Find Your New Apartment
+        Find Your New Room
       </h1>
       <div className="flex flex-col sm:flex-row justify-center items-center bg-white border rounded-lg shadow-sm overflow-hidden w-full lg:w-auto md:w-auto sm:w-full animate-fade-in">
         <select
@@ -41,10 +44,11 @@ export default function SearchBar({ onSearch }) {
           className="p-3 border-b sm:border-b-0 sm:border-r outline-none text-sm w-full sm:w-40 hover:bg-gray-100 focus:ring-2 focus:ring-blue-300 transition-colors duration-200"
         >
           <option disabled value="">Location</option>
-          <option>New York, NY</option>
-          <option>Los Angeles, CA</option>
-          <option>Austin, TX</option>
-          <option>Chicago, IL</option>
+          <option>Hospital View</option>
+          <option>eNtshonalanga</option>
+          <option>Winnie</option>
+          <option>Mayibuye</option>
+          <option>Midrand</option>
         </select>
 
         <select
@@ -58,6 +62,7 @@ export default function SearchBar({ onSearch }) {
           <option>2000-3000</option>
           <option>3000-4000</option>
           <option>4000-5000</option>
+          <option>5000-10000</option>
         </select>
 
         <select
