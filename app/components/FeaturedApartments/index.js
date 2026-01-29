@@ -10,7 +10,7 @@ const initialApartments = [
     title: "Birch Acres",
     price: "4,000",
     location: "Birch Acres",
-    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fmidrand%2FNoordwyk%2Fnoordwyk-bachelor-2.jpeg?alt=media&token=e1ceba16-d2aa-416d-bf99-c992e1339606",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fbirch-acres%2Fbirch-acres-bachelor-4%20(1).jpeg?alt=media&token=37b99a16-6dfd-42d5-96b3-d67d9442e576",
     bedrooms: '1 bedroom'
   },
   {

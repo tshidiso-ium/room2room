@@ -273,7 +273,7 @@ const apartmentData = {
       }
     },
     'bachelor-Kempton-park-1': {
-      title: 'bachelor Kempton Parkt',
+      title: 'bachelor Kempton Park',
       price: 'R5,500/month',
       location: 'Kempton Park',
       images: [
@@ -298,6 +298,34 @@ const apartmentData = {
         geyser: true,
         petsAllowed: false,
         parking: true
+      }
+    },
+    'bachelor-birch-acres-1': {
+      title: 'Birch Acres',
+      price: 'R4,000/month',
+      location: 'Birch Acres',
+      images: [
+        'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fbirch-acres%2Fbirch-acres-bachelor-4%20(1).jpeg?alt=media&token=37b99a16-6dfd-42d5-96b3-d67d9442e576',
+      'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fbirch-acres%2Fbirch-acres-bachelor-3.jpeg?alt=media&token=9ae1036d-0cbb-433a-b0b5-b8c5b6d915ed', 
+      'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fbirch-acres%2Fbirch-acres-bachelor-2.jpeg?alt=media&token=8aa7f814-a115-4f3e-9562-e351c4965064',
+    'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fbirch-acres%2Fbirch-acres-bachelor-1.jpeg?alt=media&token=93c21593-f5c0-4c9a-a97c-6feec217c809'],
+      description: `<p>This bachelor in Birch Acres is ideal for someone who wants a clean, private, and affordable living space in a quiet and convenient area.</p>
+
+      <p><strong>Deposit:</strong> R4,000</p>
+      <p><strong>Rent:</strong> R4,000 per month</p>
+      <p><strong>Admin Fee:</strong> R800</p>
+
+      <p>The unit is neat and well-maintained, offering enough room for comfortable everyday living. It is close to public transport, local shops, schools, and main routes, making it easy to travel to work or nearby areas.</p>
+
+      <p>This bachelor is perfect for a single person or couple looking for privacy, comfort, and easy access to amenities in Kempton Park.</p>
+
+      <p>Places like this don’t stay available for long — <strong>contact us soon to book a viewing!</strong></p>
+      `,
+      features: {
+        wifi: false,
+        geyser: true,
+        petsAllowed: false,
+        parking: false
       }
     },
   };
