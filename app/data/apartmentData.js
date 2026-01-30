@@ -78,13 +78,13 @@ const apartmentData = {
         'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2FeNtshonalanga%2FeNtshonalanga-1-room-id1-pic-2.png?alt=media&token=7b030db7-fd11-4a4f-b93a-79c85d9e6cc9'],
       description: `<p>This 1 room in eNtshonalanga is perfect for someone who wants private space in a quiet and safe area.</p>
 
-<p><strong>Rent:</strong> R1,300 per month</p>
+        <p><strong>Rent:</strong> R1,300 per month</p>
 
-<p>The room is neat and spacious, with enough space for your bed. It is close to local shops and public transport, making it easy to travel to work or school.</p>
+        <p>The room is neat and spacious, with enough space for your bed. It is close to local shops and public transport, making it easy to travel to work or school.</p>
 
-<p>There is <strong>Wi-Fi</strong> available. This is a great place for a single person or student who wants comfort and convenience.</p>
+        <p>There is <strong>Wi-Fi</strong> available. This is a great place for a single person or student who wants comfort and convenience.</p>
 
-<p>Places like this don’t stay empty for long — <strong>contact us soon to book a viewing!</strong>`,
+        <p>Places like this don’t stay empty for long — <strong>contact us soon to book a viewing!</strong>`,
       features: {
         wifi: false,
         geyser: false,
@@ -328,6 +328,41 @@ const apartmentData = {
         parking: false
       }
     },
+    'edleen-kempton-park-1': {
+        title: 'Two Bedroom Duplex Townhouse',
+        price: 'R750,000',
+        location: 'Edleen, Kempton Park',
+        images: [
+          'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fedleen%2Fedleen-kempton-park-1.jpeg?alt=media&token=ee950edc-4206-4168-8a28-8024e03a15b6',
+          'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fedleen%2Fedleen-kempton-park-2.jpeg?alt=media&token=f5aeece7-cb08-4aef-bd43-e9a645cd16ff', 
+          'https://console.firebase.google.com/project/custom-made-c27a9/storage/custom-made-c27a9.firebasestorage.app/files/~2Fdemo~2Fkempton-park~2Fedleen',
+          'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fedleen%2Fedleen-kempton-park-4.jpeg?alt=media&token=8f943fb5-4314-42cf-9cf4-8c4c11c31705',
+          'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fedleen%2Fedleen-kempton-park-5.jpeg?alt=media&token=b13b7414-22b4-4efb-ba96-d3ad713f74ae',
+          'https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fedleen%2Fedleen-kempton-park-6.jpeg?alt=media&token=efaccb95-1b8c-4781-b8e7-b29ab1bf4f7e'
+        ],
+        description: `<p>This beautifully maintained two-storey duplex townhouse in Edleen, Kempton Park offers modern and secure living at an affordable price of <strong>R750,000</strong>.</p>
+
+        <p>Featuring two contemporary bathrooms, the home is ideal for first-time buyers, young couples, or investors seeking a lock-up-and-go lifestyle.</p>
+
+        <p>The bright open-plan living and dining area flows seamlessly into a fully fitted kitchen with modern finishes and ample cabinetry. A private garden offers space for relaxing or entertaining outdoors.</p>
+
+        <ul>
+          <li>2 spacious bedrooms with built-in cupboards</li>
+          <li>1.5 modern bathrooms</li>
+          <li>Open-plan lounge and dining area</li>
+          <li>Fully fitted kitchen with modern finishes and ample cabinetry</li>
+        </ul>
+
+        <p>Don't miss out on this well-priced gem in a sought-after location. <strong>Contact us today to schedule a viewing!</strong></p>
+        `,
+        features: {
+          wifi: false,
+          geyser: true,
+          petsAllowed: false,
+        parking: true
+      }
+    }
+
   };
   
   export default apartmentData;

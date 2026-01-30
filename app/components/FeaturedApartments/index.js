@@ -6,6 +6,14 @@ import Link from "next/link";
 
 const initialApartments = [
   {
+    id: "edleen-kempton-park-1",
+    title: "Two Bedroom Duplex Townhouse",
+    price: "750,000",
+    location: "Kempton Park",
+    image: "https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fkempton-park%2Fedleen%2Fedleen-kempton-park-1.jpeg?alt=media&token=ee950edc-4206-4168-8a28-8024e03a15b6",
+    bedrooms: '2 bedroom'
+  },
+  {
     id: "bachelor-birch-acres-1",
     title: "Birch Acres",
     price: "4,000",
