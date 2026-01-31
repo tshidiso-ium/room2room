@@ -44,7 +44,7 @@ export default function AboutPage() {
             About Us
           </h1>
           <p className="max-w-2xl mx-auto text-gray-700 mb-12 text-center text-base">
-            At Apartment Rental, we are committed to transforming your rental journey into a seamless and enjoyable experience. With quality listings, dedicated support, and neighborhood insights, we help you find more than just a place to stay—we help you find home.
+            At Tembisa Room Finders, we are committed to transforming your rental journey into a seamless and enjoyable experience. With quality listings, dedicated support, and neighborhood insights, we help you find more than just a place to stay—we help you find home.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 bg-blue-50 p-8 rounded-lg max-w-7xl mx-auto w-full">
