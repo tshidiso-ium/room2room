@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
-import AppHeader from '@/app/components/header';
-import AppFooter from '@/app/components/footer';
-import ApartmentDescription from '@/app/components/ApartmentDescription';
+import AppHeader from '@/components/header';
+import AppFooter from '@/components/footer';
+import ApartmentDescription from '@/components/ApartmentDescription';
 import { FaWifi, FaShower, FaDog, FaParking, FaWhatsapp } from 'react-icons/fa';
 import { db } from "@/app/lib/firebaseClient";
 import { doc, setDoc, addDoc, collection, increment, serverTimestamp } from "firebase/firestore";
@@ -53,7 +53,7 @@ export default function ApartmentDetailClient({ apartment }) {
     );
   };
 
-    const trackContact = async () => {
+  const trackContact = async () => {
     // Path: appartment / {location} / rooms / {title}
     const ref = doc(
       db,
@@ -214,6 +214,7 @@ export default function ApartmentDetailClient({ apartment }) {
                     </div>
                 </div>
             </div>
+
             <div className="mt-12 flex justify-center">
                 <button
                     onClick={async () => {await countEventClick()}}
@@ -222,7 +223,7 @@ export default function ApartmentDetailClient({ apartment }) {
                     //rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 bg-green-600 text-white px-6 py-3 rounded-lg text-base font-medium hover:bg-green-700 transition-colors duration-300 shadow-md"
                 >
-                    <FaWhatsapp className="text-xl" /> Contact Agent on WhatsApp
+                  <FaWhatsapp className="text-xl" /> Contact Agent on WhatsApp
                 </button>
             </div>
         </main>

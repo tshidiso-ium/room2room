@@ -15,11 +15,14 @@ const geistMono = Geist_Mono({
 const siteUrl = "https://www.tembisaroomfinders.co.za";
 
 export const metadata = {
+
   title: "Tembisa Room Finders | Rooms, Cottages & Bachelor Rentals in Tembisa",
+  
   description:
     "Find affordable rooms, bachelor units, cottages, and rental spaces across Tembisa. Fast, reliable, and convenient rental matching with relocation transport available.",
 
   canonical: siteUrl,
+
   openGraph: {
     type: "website",
     locale: "en_ZA",
@@ -97,6 +100,7 @@ export const metadata = {
       description: "Tshidiso Modiko is a full-stack developer and the founder of TembisaRoomFinders, a platform focused on making it easy for residents in and around Tembisa to find affordable, reliable rental housing."
     }
   }
+
 };
 export default function RootLayout({ children }) {
   return (

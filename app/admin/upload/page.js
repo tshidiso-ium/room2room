@@ -1,15 +1,21 @@
 'use client';
 
+import { storage, db } from '../../lib/firebaseClient';
 import { useAuth } from '@/context/AuthContext';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
 import { useSearchParams } from 'next/navigation';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+
+
 
 export default function UploadPage() {
   const { user } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
   const id = searchParams.get('id');
+  const [loading, setLoading] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
@@ -24,6 +30,7 @@ export default function UploadPage() {
       parking: false
     }
   });
+
   useEffect(() => {
     if (user === null) {
         router.push('/admin/login');
@@ -49,10 +56,36 @@ export default function UploadPage() {
     }));
   };
 
-  const handleImageChange = (index, value) => {
-    const newImages = [...form.images];
-    newImages[index] = value;
-    setForm({ ...form, images: newImages });
+  // const handleImageChange = (index, value) => {
+  //   const newImages = [...form.images];
+  //   newImages[index] = value;
+  //   setForm({ ...form, images: newImages });
+  // };
+
+  const handleImageUpload = async (e) => {
+    const files = Array.from(e.target.files);
+
+    const uploadedUrls = [];
+
+    for (const file of files) {
+      const arrayBuffer = await file.arrayBuffer(); // 🔥 ArrayBuffer
+      const storageRef = ref(
+        storage,
+        `apartments/${Date.now()}-${file.name}`
+      );
+
+      await uploadBytes(storageRef, arrayBuffer, {
+        contentType: file.type,
+      });
+
+      const downloadURL = await getDownloadURL(storageRef);
+      uploadedUrls.push(downloadURL);
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      images: uploadedUrls,
+    }));
   };
 
   const handleFeatureToggle = (feature) => {
@@ -65,10 +98,37 @@ export default function UploadPage() {
     }));
   };
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    console.log(id ? 'Updating:' : 'Creating:', form);
-    // Add create/update logic here
+  const handleSubmit = async (e) => {
+      e.preventDefault();
+        setLoading(true);
+
+        try {
+          if (id) {
+            // 🔄 Update existing listing
+            await updateDoc(doc(db, "apartments", id), {
+              ...form,
+              updatedAt: new Date(),
+            });
+
+            alert("Listing updated successfully!");
+          } else {
+            // ➕ Create new listing
+            await addDoc(collection(db, "apartments"), {
+              ...form,
+              createdAt: new Date(),
+            });
+
+            alert("Listing created successfully!");
+          }
+
+          router.push("/admin/dashboard");
+
+        } catch (error) {
+          console.error("Error saving listing:", error);
+          alert("Something went wrong. Check console.");
+        }
+
+        setLoading(false);
   };
     
   if (!user) {
@@ -122,7 +182,7 @@ export default function UploadPage() {
         />
 
         {/* Image URLs */}
-        <div>
+        {/* <div>
           <label className="block font-medium mb-1">Image URLs (max 3)</label>
           {form.images.map((img, index) => (
             <input
@@ -134,6 +194,28 @@ export default function UploadPage() {
               className="w-full border p-2 rounded mb-2"
             />
           ))}
+        </div> */}
+        <div>
+          <label className="block font-medium mb-1">Upload Images (max 3)</label>
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImageUpload}
+            className="w-full border p-2 rounded mb-2"
+          />
+          {form.images.length > 0 && (
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              {form.images.map((img, index) => (
+                <img
+                  key={index}
+                  src={img}
+                  alt={`Preview ${index}`}
+                  className="w-full h-24 object-cover rounded"
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Features */}
@@ -154,9 +236,14 @@ export default function UploadPage() {
         {/* Submit Button */}
         <button
           type="submit"
-          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors"
+          disabled={loading}
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
-          {id ? 'Update Listing' : 'Create Listing'}
+          {loading
+            ? "Saving..."
+            : id
+            ? "Update Listing"
+            : "Create Listing"}
         </button>
       </form>
     </div>

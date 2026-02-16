@@ -1,10 +1,10 @@
 'use client';
 import Head from 'next/head'
 import { useState, useEffect } from "react";
-import AppHeader from "@/app/components/header";
-import SearchBar from "@/app/components/SearchBar";
-import FeaturedApartments from "@/app/components/FeaturedApartments";
-import AppFooter from "@/app/components/footer";
+import AppHeader from "@/components/header";
+import SearchBar from "@/components/SearchBar";
+import FeaturedApartments from "@/components/FeaturedApartments";
+import AppFooter from "@/components/footer";
 import { db } from "@/app/lib/firebaseClient";
 import { doc, setDoc, increment, serverTimestamp } from "firebase/firestore";
 
