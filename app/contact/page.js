@@ -57,16 +57,16 @@ export default function ContactPage() {
             </button>
           </form>
           <div className="mt-8 text-sm text-gray-700 space-y-2">
-            <p>📞 (123) 456-7690</p>
-            <p>📧 info@apartmentrental.com</p>
-            <p>📍 123 Main Street, Anytown, USA</p>
+            <p>📞 (+27) 79 684 9423</p>
+            {/* <p>📧 info@apartmentrental.com</p>
+            <p>📍 123 Main Street, Anytown, USA</p> */}
           </div>
         </div>
 
         {/* Right section: Image */}
         <div className="flex-1">
         <Image
-          src="https://images.unsplash.com/photo-1501183638710-841dd1904471?auto=format&fit=crop&w=1000&q=80"
+          src="https://firebasestorage.googleapis.com/v0/b/custom-made-c27a9.firebasestorage.app/o/demo%2Fbanner_hero.jpeg?alt=media&token=83011ded-d699-4af7-a74c-5c930c19870d"
           alt="Contact location"
           width={1000}
           height={600}
