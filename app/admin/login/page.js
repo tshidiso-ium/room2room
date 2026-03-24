@@ -15,7 +15,7 @@ export default function AdminLogin() {
     e.preventDefault();
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/admin/upload');
+      router.push('/admin/dashboard');
     } catch (error) {
       alert('Login failed: ' + error.message);
     }

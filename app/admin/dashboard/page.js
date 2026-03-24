@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { collection, getDocs, deleteDoc, doc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '../../lib/firebaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
@@ -53,7 +53,7 @@ export default function AdminDashboard() {
 
             <div className="mt-auto pt-4 flex justify-between gap-2">
               <Link
-                href={`/admin/edit/${apt.id}`}
+                href={`/admin/edit?id=${apt.id}`}
                 className="bg-yellow-400 text-white px-3 py-1 rounded hover:bg-yellow-500"
               >
                 Edit

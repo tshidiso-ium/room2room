@@ -1,6 +1,6 @@
 'use client';
 import { createContext, useContext, useEffect, useState } from 'react';
-import { app } from '@/firebase'; // your firebase.js init
+import {app} from '../app/lib/firebaseClient';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
 
 
