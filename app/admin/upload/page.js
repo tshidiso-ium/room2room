@@ -3,50 +3,81 @@
 import { storage, db } from '../../lib/firebaseClient';
 import { useAuth } from '@/context/AuthContext';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
-import { collection, addDoc, doc, updateDoc } from "firebase/firestore";
-import { useSearchParams } from 'next/navigation';
+import { collection, addDoc, doc, updateDoc, getDoc } from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
-
-
 
 export default function UploadPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const id = searchParams.get('id');
   const [loading, setLoading] = useState(false);
+  const [listingId, setListingId] = useState(null);
+  const [pageReady, setPageReady] = useState(false);
 
   const [form, setForm] = useState({
     title: '',
     location: '',
     price: '',
     description: '',
-    images: ['', '', ''],
+    images: [],
     features: {
       wifi: false,
       geyser: false,
       petsAllowed: false,
-      parking: false
-    }
+      parking: false,
+    },
   });
 
   useEffect(() => {
-    if (user === null) {
-        router.push('/admin/login');
-    }
-  }, [user]);
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('id');
+    setListingId(id);
+    setPageReady(true);
+  }, []);
 
-  // Load listing data if editing
   useEffect(() => {
-    if (id) {
-      // Simulated fetch logic (replace with DB call)
-      const listing = {}; // e.g., getApartmentById(id)
-      if (listing) {
-        setForm(listing);
-      }
+    if (pageReady && user === null) {
+      router.push('/admin/login');
     }
-  }, [id]);
+  }, [user, pageReady, router]);
+
+  useEffect(() => {
+    const fetchListing = async () => {
+      if (!listingId) return;
+
+      try {
+        const docRef = doc(db, 'apartments', listingId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+          const data = docSnap.data();
+          setForm({
+            title: data.title || '',
+            location: data.location || '',
+            price: data.price || '',
+            description: data.description || '',
+            images: data.images || [],
+            features: {
+              wifi: data.features?.wifi || false,
+              geyser: data.features?.geyser || false,
+              petsAllowed: data.features?.petsAllowed || false,
+              parking: data.features?.parking || false,
+            },
+          });
+        } else {
+          alert('Listing not found');
+          router.push('/admin/dashboard');
+        }
+      } catch (error) {
+        console.error('Error loading listing:', error);
+        alert('Failed to load listing');
+      }
+    };
+
+    if (pageReady) {
+      fetchListing();
+    }
+  }, [listingId, pageReady, router]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -56,36 +87,32 @@ export default function UploadPage() {
     }));
   };
 
-  // const handleImageChange = (index, value) => {
-  //   const newImages = [...form.images];
-  //   newImages[index] = value;
-  //   setForm({ ...form, images: newImages });
-  // };
-
   const handleImageUpload = async (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || []).slice(0, 3);
 
-    const uploadedUrls = [];
+    try {
+      const uploadedUrls = [];
 
-    for (const file of files) {
-      const arrayBuffer = await file.arrayBuffer(); // 🔥 ArrayBuffer
-      const storageRef = ref(
-        storage,
-        `apartments/${Date.now()}-${file.name}`
-      );
+      for (const file of files) {
+        const arrayBuffer = await file.arrayBuffer();
+        const storageRef = ref(storage, `apartments/${Date.now()}-${file.name}`);
 
-      await uploadBytes(storageRef, arrayBuffer, {
-        contentType: file.type,
-      });
+        await uploadBytes(storageRef, arrayBuffer, {
+          contentType: file.type,
+        });
 
-      const downloadURL = await getDownloadURL(storageRef);
-      uploadedUrls.push(downloadURL);
+        const downloadURL = await getDownloadURL(storageRef);
+        uploadedUrls.push(downloadURL);
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        images: uploadedUrls,
+      }));
+    } catch (error) {
+      console.error('Error uploading images:', error);
+      alert('Image upload failed');
     }
-
-    setForm((prev) => ({
-      ...prev,
-      images: uploadedUrls,
-    }));
   };
 
   const handleFeatureToggle = (feature) => {
@@ -99,48 +126,44 @@ export default function UploadPage() {
   };
 
   const handleSubmit = async (e) => {
-      e.preventDefault();
-        setLoading(true);
+    e.preventDefault();
+    setLoading(true);
 
-        try {
-          if (id) {
-            // 🔄 Update existing listing
-            await updateDoc(doc(db, "apartments", id), {
-              ...form,
-              updatedAt: new Date(),
-            });
+    try {
+      if (listingId) {
+        await updateDoc(doc(db, 'apartments', listingId), {
+          ...form,
+          updatedAt: new Date(),
+        });
+        alert('Listing updated successfully!');
+      } else {
+        await addDoc(collection(db, 'apartments'), {
+          ...form,
+          createdAt: new Date(),
+        });
+        alert('Listing created successfully!');
+      }
 
-            alert("Listing updated successfully!");
-          } else {
-            // ➕ Create new listing
-            await addDoc(collection(db, "apartments"), {
-              ...form,
-              createdAt: new Date(),
-            });
-
-            alert("Listing created successfully!");
-          }
-
-          router.push("/admin/dashboard");
-
-        } catch (error) {
-          console.error("Error saving listing:", error);
-          alert("Something went wrong. Check console.");
-        }
-
-        setLoading(false);
+      router.push('/admin/dashboard');
+    } catch (error) {
+      console.error('Error saving listing:', error);
+      alert('Something went wrong. Check console.');
+    } finally {
+      setLoading(false);
+    }
   };
-    
-  if (!user) {
+
+  if (!pageReady || !user) {
     return <div className="p-10 text-center">Redirecting...</div>;
   }
 
   return (
     <div className="max-w-2xl mx-auto p-6 bg-white shadow rounded">
-      <h1 className="text-2xl font-bold mb-6">{id ? 'Edit' : 'Add'} Apartment Listing</h1>
+      <h1 className="text-2xl font-bold mb-6">
+        {listingId ? 'Edit' : 'Add'} Apartment Listing
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Basic Info */}
         <input
           type="text"
           name="title"
@@ -181,20 +204,6 @@ export default function UploadPage() {
           required
         />
 
-        {/* Image URLs */}
-        {/* <div>
-          <label className="block font-medium mb-1">Image URLs (max 3)</label>
-          {form.images.map((img, index) => (
-            <input
-              key={index}
-              type="url"
-              placeholder={`Image URL ${index + 1}`}
-              value={img}
-              onChange={(e) => handleImageChange(index, e.target.value)}
-              className="w-full border p-2 rounded mb-2"
-            />
-          ))}
-        </div> */}
         <div>
           <label className="block font-medium mb-1">Upload Images (max 3)</label>
           <input
@@ -218,7 +227,6 @@ export default function UploadPage() {
           )}
         </div>
 
-        {/* Features */}
         <div className="grid grid-cols-2 gap-4">
           {Object.entries(form.features).map(([key, val]) => (
             <label key={key} className="flex items-center space-x-2">
@@ -233,17 +241,16 @@ export default function UploadPage() {
           ))}
         </div>
 
-        {/* Submit Button */}
         <button
           type="submit"
           disabled={loading}
           className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition-colors disabled:opacity-50"
         >
           {loading
-            ? "Saving..."
-            : id
-            ? "Update Listing"
-            : "Create Listing"}
+            ? 'Saving...'
+            : listingId
+            ? 'Update Listing'
+            : 'Create Listing'}
         </button>
       </form>
     </div>

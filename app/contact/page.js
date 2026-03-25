@@ -1,8 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import AppFooter from '@/app/components/footer';
-import AppHeader from '@/app/components/header';
+import AppFooter from '@/components/footer';
+import AppHeader from '@/components/header';
 import Image from 'next/image';
 
 

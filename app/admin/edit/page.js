@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
-import { db } from '@/firebase';
+import { db } from '@/app/lib/firebaseClient';
 
 export default function EditApartmentPage() {
   const [loading, setLoading] = useState(true);

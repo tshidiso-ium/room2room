@@ -2,8 +2,8 @@
 
 import { FaBullseye, FaHandsHelping, FaHome } from "react-icons/fa";
 import Link from "next/link";
-import AppFooter from "@/app/components/footer";
-import AppHeader from "@/app/components/header";
+import AppFooter from "@/components/header";
+import AppHeader from "@/components/header";
 
 const sections = [
   {
