@@ -6,5 +6,16 @@
       "**/.*",
       "**/node_modules/**"
     ]
+  },
+  "apphosting": {
+    "backendId": "room-finders-backend-v1",
+    "rootDir": ".",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "firebase-debug.log",
+      "firebase-debug.*.log",
+      "functions"
+    ]
   }
 }
