@@ -112,7 +112,7 @@ export default function AboutPage() {
                 </p>
               </div>
 
-              <div className="flex justify-start lg:justify-end">
+              <div className=" justify-start lg:justify-end hidden">
                 <button
                   type="button"
                   onClick={toggleDarkMode}
