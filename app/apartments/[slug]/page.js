@@ -9,7 +9,7 @@ import {
 import { db } from '@/app/lib/firebaseClient';
 import ApartmentDetailClient from './ApartmentDetailClient';
 
-export const revalidate = 60; // regenerate page at most every 60 seconds
+export const revalidate = 60;
 export const dynamic = 'force-static';
 export const dynamicParams = true;
 
@@ -28,22 +28,9 @@ function serializeApartment(doc) {
   };
 }
 
-async function getApartmentSlugs() {
-  const snapshot = await getDocs(collection(db, 'apartments'));
-
-  return snapshot.docs
-    .map((doc) => doc.data().slug)
-    .filter(Boolean)
-    .map((slug) => ({
-      slug,
-    }));
-}
-
 async function getApartmentBySlug(slug) {
-  const apartmentsRef = collection(db, 'apartments');
-
   const q = query(
-    apartmentsRef,
+    collection(db, 'apartments'),
     where('slug', '==', slug),
     limit(1)
   );
@@ -58,7 +45,7 @@ async function getApartmentBySlug(slug) {
 }
 
 export async function generateStaticParams() {
-  return getApartmentSlugs();
+  return [];
 }
 
 export default async function ApartmentPage({ params }) {
