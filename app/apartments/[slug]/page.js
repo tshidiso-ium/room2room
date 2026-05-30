@@ -1,42 +1,57 @@
 import { notFound } from 'next/navigation';
-import { collection, getDocs } from 'firebase/firestore';
+import {
+  collection,
+  getDocs,
+  query,
+  where,
+  limit,
+} from 'firebase/firestore';
 import { db } from '@/app/lib/firebaseClient';
 import ApartmentDetailClient from './ApartmentDetailClient';
 
-async function getApartments() {
-  const snapshot = await getDocs(collection(db, 'apartments'));
+export const revalidate = 60;
+export const dynamic = 'force-static';
+export const dynamicParams = true;
 
-  return snapshot.docs.map((doc) => {
-    const data = doc.data();
+function serializeApartment(doc) {
+  const data = doc.data();
 
-    return {
-      id: doc.id,
-      ...data,
-      createdAt: data.createdAt?.seconds
-        ? new Date(data.createdAt.seconds * 1000).toISOString()
-        : null,
-      updatedAt: data.updatedAt?.seconds
-        ? new Date(data.updatedAt.seconds * 1000).toISOString()
-        : null,
-    };
-  });
+  return {
+    id: doc.id,
+    ...data,
+    createdAt: data.createdAt?.seconds
+      ? new Date(data.createdAt.seconds * 1000).toISOString()
+      : null,
+    updatedAt: data.updatedAt?.seconds
+      ? new Date(data.updatedAt.seconds * 1000).toISOString()
+      : null,
+  };
+}
+
+async function getApartmentBySlug(slug) {
+  const q = query(
+    collection(db, 'apartments'),
+    where('slug', '==', slug),
+    limit(1)
+  );
+
+  const snapshot = await getDocs(q);
+
+  if (snapshot.empty) {
+    return null;
+  }
+
+  return serializeApartment(snapshot.docs[0]);
 }
 
 export async function generateStaticParams() {
-  const apartments = await getApartments();
-
-  return apartments
-    .filter((apartment) => apartment.slug)
-    .map((apartment) => ({
-      slug: apartment.slug,
-    }));
+  return [];
 }
 
 export default async function ApartmentPage({ params }) {
   const { slug } = await params;
 
-  const apartments = await getApartments();
-  const apartment = apartments.find((item) => item.slug === slug);
+  const apartment = await getApartmentBySlug(slug);
 
   if (!apartment) {
     notFound();

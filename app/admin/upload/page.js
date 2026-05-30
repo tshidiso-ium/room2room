@@ -1,12 +1,10 @@
-'use client';
-
 import { Suspense } from 'react';
-import UploadPageInner from './UploadPageInner';
+import UploadClient from './UploadClient';
 
 export default function UploadPage() {
   return (
-    <Suspense fallback={<div className="p-10 text-center">Loading...</div>}>
-      <UploadPageInner />
+    <Suspense fallback={<div>Loading upload page...</div>}>
+      <UploadClient />
     </Suspense>
   );
 }

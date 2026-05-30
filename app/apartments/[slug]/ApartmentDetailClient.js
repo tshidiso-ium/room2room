@@ -275,16 +275,22 @@ export default function ApartmentDetailClient({ apartment }) {
       <AppHeader />
 
       <main className="mx-auto w-full max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-        <nav aria-label="Breadcrumb" className="mb-6 overflow-x-auto">
-          <ol className="flex items-center gap-2 whitespace-nowrap text-sm text-slate-500 dark:text-slate-400">
-            <li>
-              <Link href="/" className="transition hover:text-blue-700 dark:hover:text-blue-400">
+        <nav
+          aria-label="Breadcrumb"
+          className="mb-4 -mx-4 overflow-x-auto px-4 sm:mx-0 sm:mb-6 sm:px-0"
+        >
+          <ol className="flex min-w-0 items-center gap-1.5 whitespace-nowrap text-xs text-slate-500 dark:text-slate-400 sm:gap-2 sm:text-sm">
+            <li className="shrink-0">
+              <Link
+                href="/"
+                className="transition hover:text-blue-700 dark:hover:text-blue-400"
+              >
                 Home
               </Link>
             </li>
 
-            <li className="flex items-center gap-2">
-              <ChevronRight className="h-4 w-4" />
+            <li className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 sm:h-4 sm:w-4" />
               <Link
                 href="/#featured-listings"
                 className="transition hover:text-blue-700 dark:hover:text-blue-400"
@@ -294,22 +300,24 @@ export default function ApartmentDetailClient({ apartment }) {
             </li>
 
             {safeLocation && (
-              <li className="flex items-center gap-2">
-                <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-                <span className="max-w-[180px] truncate">{safeLocation}</span>
+              <li className="hidden items-center gap-1.5 sm:flex sm:gap-2">
+                <ChevronRight className="h-4 w-4 shrink-0 text-slate-400 dark:text-slate-500" />
+                <span className="max-w-[140px] truncate md:max-w-[180px]">
+                  {safeLocation}
+                </span>
               </li>
             )}
 
-            <li className="flex items-center gap-2 text-slate-900 dark:text-white">
-              <ChevronRight className="h-4 w-4 text-slate-400 dark:text-slate-500" />
-              <span className="max-w-[220px] truncate font-medium sm:max-w-md">
+            <li className="flex min-w-0 items-center gap-1.5 text-slate-900 dark:text-white sm:gap-2">
+              <ChevronRight className="h-3.5 w-3.5 shrink-0 text-slate-400 dark:text-slate-500 sm:h-4 sm:w-4" />
+              <span className="max-w-[150px] truncate font-medium xs:max-w-[180px] sm:max-w-[260px] md:max-w-md">
                 {safeTitle}
               </span>
             </li>
           </ol>
         </nav>
 
-        <div className="mb-6 flex justify-end">
+        <div className="mb-6  justify-end hidden">
           <button
             type="button"
             onClick={toggleDarkMode}

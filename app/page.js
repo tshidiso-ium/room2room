@@ -184,7 +184,7 @@ export default function HomePage() {
         <AppHeader />
 
         <main>
-          <section className="fixed bottom-4 right-4 z-40">
+          <section className="fixed bottom-4 right-4 z-40 hidden">
             <button
               type="button"
               onClick={toggleDarkMode}
