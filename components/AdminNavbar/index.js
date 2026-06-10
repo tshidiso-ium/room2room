@@ -3,8 +3,8 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useState } from 'react';
-import { getAuth, signOut } from 'firebase/auth';
+import { useState, useEffect } from 'react';
+import { getAuth, signOut, onAuthStateChanged } from 'firebase/auth';
 import { app } from '@/app/lib/firebaseClient';
 import {
   LayoutDashboard,
@@ -13,7 +13,7 @@ import {
   LogOut,
   Menu,
   X,
-  ShieldCheck,
+  Home,
 } from 'lucide-react';
 
 const navItems = [
@@ -38,8 +38,41 @@ export default function AdminNavbar() {
   const pathname = usePathname();
   const router = useRouter();
   const auth = getAuth(app);
+
   const [menuOpen, setMenuOpen] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [checkingSession, setCheckingSession] = useState(true);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+      setCheckingSession(false);
+    });
+
+    return () => unsubscribe();
+  }, [auth]);
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (!user) {
+        router.push('/admin/login');
+        return;
+      }
+
+      // Optional: force-check that the token is still valid
+      try {
+        await user.getIdToken(true);
+        setCheckingSession(false);
+      } catch (error) {
+        console.error('Session expired or invalid:', error);
+        await signOut(auth);
+        router.push('/admin/login');
+      }
+    });
+
+    return () => unsubscribe();
+  }, [auth, router]);
 
   const handleLogout = async () => {
     try {
@@ -54,7 +87,22 @@ export default function AdminNavbar() {
     }
   };
 
+  if (checkingSession) {
+    return null;
+  }
+
+
   const isActive = (href) => pathname === href;
+
+  const visibleNavItems = user
+  ? navItems
+  : [
+      {
+        label: 'Return Home',
+        href: '/',
+        icon: Home,
+      },
+    ];
 
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200 bg-white/85 backdrop-blur-xl dark:bg-slate-800/90 ">
@@ -78,10 +126,12 @@ export default function AdminNavbar() {
         </Link>
 
         <nav className="hidden items-center gap-2 md:flex">
-          {navItems.map((item) => {
+          {visibleNavItems.map((item) => {
             const Icon = item.icon;
             const active = isActive(item.href);
-
+            if (checkingSession) {
+              return null;
+            }
             return (
               <Link
                 key={item.href}
@@ -99,17 +149,19 @@ export default function AdminNavbar() {
           })}
         </nav>
 
-        <div className="hidden md:flex">
-          <button
-            type="button"
-            onClick={handleLogout}
-            disabled={loggingOut}
-            className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-white dark:hover:bg-slate-700/50 dark:border-slate-600"
-          >
-            <LogOut className="h-4 w-4" />
-            {loggingOut ? 'Signing out...' : 'Logout'}
-          </button>
-        </div>
+          {user && (
+            <div className="hidden md:flex">
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="inline-flex items-center gap-2 rounded-2xl border border-slate-300 px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-white dark:hover:bg-slate-700/50 dark:border-slate-600"
+              >
+                <LogOut className="h-4 w-4" />
+                {loggingOut ? 'Signing out...' : 'Logout'}
+              </button>
+            </div>
+          )}
 
         <button
           type="button"
@@ -124,10 +176,12 @@ export default function AdminNavbar() {
       {menuOpen && (
         <div className="border-t border-slate-200 bg-white md:hidden dark:bg-slate-800/90">
           <div className="mx-auto flex max-w-7xl flex-col gap-2 px-4 py-4 sm:px-6">
-            {navItems.map((item) => {
+            {visibleNavItems.map((item) => {
               const Icon = item.icon;
               const active = isActive(item.href);
-
+              if (checkingSession) {
+                return null;
+              }
               return (
                 <Link
                   key={item.href}
@@ -145,15 +199,17 @@ export default function AdminNavbar() {
               );
             })}
 
-            <button
-              type="button"
-              onClick={handleLogout}
-              disabled={loggingOut}
-              className="mt-2 inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-white dark:hover:bg-slate-700/50"
-            >
-              <LogOut className="h-4 w-4" />
-              {loggingOut ? 'Signing out...' : 'Logout'}
-            </button>
+            {user && (
+              <button
+                type="button"
+                onClick={handleLogout}
+                disabled={loggingOut}
+                className="mt-2 inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 px-4 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-70 dark:text-white dark:hover:bg-slate-700/50"
+              >
+                <LogOut className="h-4 w-4" />
+                {loggingOut ? 'Signing out...' : 'Logout'}
+              </button>
+            )}
           </div>
         </div>
       )}

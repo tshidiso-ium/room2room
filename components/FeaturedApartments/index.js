@@ -4,8 +4,9 @@ import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
-import { MapPin, BedDouble, Bath, ArrowRight, SearchX } from 'lucide-react';
+import { MapPin, BedDouble, Bath, ArrowRight, SearchX, UserRound } from 'lucide-react';
 import { db } from '@/app/lib/firebaseClient';
+import { getListingAgent } from '@/app/lib/agentProfile';
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop';
@@ -53,11 +54,14 @@ export default function FeaturedApartments({ filters }) {
 
       const apartmentCity = apartment.location?.city?.toLowerCase() || '';
       const apartmentSuburb = apartment.location?.suburb?.toLowerCase() || '';
+      const apartmentLocation =
+        typeof apartment.location === 'string' ? apartment.location.toLowerCase() : '';
 
       const matchesLocation =
         !locationQuery ||
         apartmentCity.includes(locationQuery) ||
-        apartmentSuburb.includes(locationQuery);
+        apartmentSuburb.includes(locationQuery) ||
+        apartmentLocation.includes(locationQuery);
 
       const matchesPropertyType =
         !filters?.propertyType || apartment.propertyType === filters.propertyType;
@@ -171,8 +175,11 @@ export default function FeaturedApartments({ filters }) {
           {filteredApartments.map((apt) => {
             const imageSrc = apt.images?.[0] || FALLBACK_IMAGE;
             const locationLabel =
-              [apt.location?.suburb, apt.location?.city].filter(Boolean).join(', ') ||
+              (typeof apt.location === 'string'
+                ? apt.location
+                : [apt.location?.suburb, apt.location?.city].filter(Boolean).join(', ')) ||
               'Location unavailable';
+            const listingAgent = getListingAgent(apt);
 
             return (
               <Link
@@ -213,6 +220,13 @@ export default function FeaturedApartments({ filters }) {
                       <div className="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                         <MapPin className="h-4 w-4 shrink-0" />
                         <span className="line-clamp-1">{locationLabel}</span>
+                      </div>
+
+                      <div className="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                        <UserRound className="h-4 w-4 shrink-0" />
+                        <span className="line-clamp-1">
+                          Posted by {listingAgent.name}
+                        </span>
                       </div>
                     </div>
                   </div>

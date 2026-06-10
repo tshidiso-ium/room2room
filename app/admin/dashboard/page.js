@@ -1,9 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { collection, deleteDoc, doc, getDocs } from 'firebase/firestore';
+import {
+  collection,
+  deleteDoc,
+  doc,
+  getDocs,
+  query as firestoreQuery,
+  where,
+} from 'firebase/firestore';
 import { useRouter } from 'next/navigation';
 import {
   Building2,
@@ -21,10 +28,12 @@ import {
   Filter,
   Moon,
   Sun,
+  UserRound,
 } from 'lucide-react';
 
 import { db } from '../../lib/firebaseClient';
 import { useAuth } from '@/context/AuthContext';
+import { buildAgentSnapshot, getListingAgent } from '@/app/lib/agentProfile';
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop';
@@ -39,8 +48,9 @@ export default function AdminDashboard() {
   const [sortBy, setSortBy] = useState('newest');
   const [darkMode, setDarkMode] = useState(false);
 
-  const { user } = useAuth();
+  const { user, agentProfile } = useAuth();
   const router = useRouter();
+  const activeAgent = user ? buildAgentSnapshot(user, agentProfile || {}) : null;
 
   useEffect(() => {
     const storedTheme =
@@ -67,23 +77,18 @@ export default function AdminDashboard() {
     }
   };
 
-  useEffect(() => {
-    if (user === undefined) return;
+  const fetchListings = useCallback(async () => {
+    if (!user?.uid) return;
 
-    if (!user) {
-      router.push('/admin/login');
-      return;
-    }
-
-    fetchListings();
-  }, [user, router]);
-
-  const fetchListings = async () => {
     try {
       setLoading(true);
       setError('');
 
-      const querySnapshot = await getDocs(collection(db, 'apartments'));
+      const listingsQuery = firestoreQuery(
+        collection(db, 'apartments'),
+        where('agentId', '==', user.uid)
+      );
+      const querySnapshot = await getDocs(listingsQuery);
       const listings = querySnapshot.docs.map((docItem) => ({
         id: docItem.id,
         ...docItem.data(),
@@ -96,9 +101,27 @@ export default function AdminDashboard() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user === undefined) return;
+
+    if (!user) {
+      router.push('/admin/login');
+      return;
+    }
+
+    fetchListings();
+  }, [fetchListings, user, router]);
 
   const handleDelete = async (id) => {
+    const listing = apartments.find((item) => item.id === id);
+
+    if (!user?.uid || listing?.agentId !== user.uid) {
+      alert('You can only delete listings posted from your agent profile.');
+      return;
+    }
+
     const confirmed = window.confirm(
       'Are you sure you want to permanently delete this listing?'
     );
@@ -188,15 +211,24 @@ export default function AdminDashboard() {
         <section className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <span className="inline-flex rounded-full bg-blue-50 px-3 py-1 text-sm font-medium text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
-              Admin dashboard
+              Agent dashboard
             </span>
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              Manage your property portfolio
+              Manage your posted listings
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400 sm:text-base">
-              Monitor listings, update inventory, and keep your real-estate catalog
-              accurate and market-ready.
+              Monitor your listings, update your inventory, and keep your agent
+              profile connected to every property you post.
             </p>
+            {activeAgent && (
+              <div className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-slate-200 bg-white px-4 py-2 text-sm text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-900 dark:text-slate-300">
+                <UserRound className="h-4 w-4 text-blue-700 dark:text-blue-300" />
+                Signed in as{' '}
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {activeAgent.name}
+                </span>
+              </div>
+            )}
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row">
@@ -230,7 +262,7 @@ export default function AdminDashboard() {
 
         <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
           <StatCard
-            title="Total listings"
+            title="Your listings"
             value={stats.total}
             icon={<Building2 className="h-5 w-5" />}
           />
@@ -358,6 +390,7 @@ export default function AdminDashboard() {
                     : [apt.location?.suburb, apt.location?.city].filter(Boolean).join(', ');
 
                 const imageSrc = apt.images?.[0] || FALLBACK_IMAGE;
+                const listingAgent = getListingAgent(apt);
 
                 return (
                   <article
@@ -400,6 +433,12 @@ export default function AdminDashboard() {
                             <MapPin className="h-4 w-4" />
                             <span className="line-clamp-1">
                               {locationLabel || 'Location unavailable'}
+                            </span>
+                          </div>
+                          <div className="mt-2 flex items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                            <UserRound className="h-4 w-4" />
+                            <span className="line-clamp-1">
+                              Posted by {listingAgent.name}
                             </span>
                           </div>
                         </div>

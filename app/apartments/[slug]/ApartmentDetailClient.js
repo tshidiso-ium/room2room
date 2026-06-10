@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import AppHeader from '@/components/header';
@@ -23,8 +23,10 @@ import {
   ShieldCheck,
   Moon,
   Sun,
+  UserRound,
 } from 'lucide-react';
 import { db } from '@/app/lib/firebaseClient';
+import { getListingAgent, getWhatsappNumber } from '@/app/lib/agentProfile';
 import {
   doc,
   setDoc,
@@ -68,6 +70,8 @@ export default function ApartmentDetailClient({ apartment }) {
     }
     return apartment?.price || 'Price on request';
   }, [apartment?.price]);
+  const listingAgent = getListingAgent(apartment);
+  const whatsappNumber = getWhatsappNumber(listingAgent.phone);
 
   const whatsappPrefill = useMemo(() => {
     return encodeURIComponent(
@@ -88,14 +92,6 @@ export default function ApartmentDetailClient({ apartment }) {
       document.documentElement.classList.add('dark');
     }
   }, []);
-
-  useEffect(() => {
-    if (!apartment) return;
-
-    trackVisit().catch((err) => {
-      console.error('Failed to track visit:', err);
-    });
-  }, [apartment]);
 
   const toggleDarkMode = () => {
     const next = !darkMode;
@@ -129,15 +125,19 @@ export default function ApartmentDetailClient({ apartment }) {
       .replace(/-+/g, '-');
   }
 
-  const analyticsRef = doc(
-    db,
-    'appartment',
-    firestoreSafeKey(safeLocation),
-    'rooms',
-    firestoreSafeKey(safeTitle)
+  const analyticsRef = useMemo(
+    () =>
+      doc(
+        db,
+        'appartment',
+        firestoreSafeKey(safeLocation),
+        'rooms',
+        firestoreSafeKey(safeTitle)
+      ),
+    [safeLocation, safeTitle]
   );
 
-  const trackVisit = async () => {
+  const trackVisit = useCallback(async () => {
     await setDoc(
       analyticsRef,
       {
@@ -148,7 +148,15 @@ export default function ApartmentDetailClient({ apartment }) {
       },
       { merge: true }
     );
-  };
+  }, [analyticsRef, safeLocation, safeTitle]);
+
+  useEffect(() => {
+    if (!apartment) return;
+
+    trackVisit().catch((err) => {
+      console.error('Failed to track visit:', err);
+    });
+  }, [apartment, trackVisit]);
 
   const trackContact = async () => {
     await setDoc(
@@ -194,6 +202,10 @@ export default function ApartmentDetailClient({ apartment }) {
         listingLocation: safeLocation,
         listingPrice: apartment?.price ?? safePrice,
         listingUrl: pageUrl,
+        agentId: listingAgent.id,
+        agentName: listingAgent.name,
+        agentEmail: listingAgent.email,
+        agentPhone: listingAgent.phone,
         createdAt: serverTimestamp(),
       });
 
@@ -231,7 +243,7 @@ export default function ApartmentDetailClient({ apartment }) {
           `Please contact me with more information.`
       );
 
-      window.open(`https://wa.me/27796849423?text=${userMessage}`, '_blank');
+      window.open(`https://wa.me/${whatsappNumber}?text=${userMessage}`, '_blank');
 
       setShowForm(false);
       setForm({
@@ -412,6 +424,16 @@ export default function ApartmentDetailClient({ apartment }) {
                     <MapPin className="h-4 w-4" />
                     <span>{safeLocation}</span>
                   </div>
+
+                  <div className="mt-3 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <UserRound className="h-4 w-4" />
+                    <span>
+                      Posted by{' '}
+                      <span className="font-medium text-slate-900 dark:text-white">
+                        {listingAgent.name}
+                      </span>
+                    </span>
+                  </div>
                 </div>
 
                 <div className="rounded-2xl bg-blue-50 px-5 py-4 dark:bg-blue-500/10 sm:min-w-[220px]">
@@ -491,6 +513,27 @@ export default function ApartmentDetailClient({ apartment }) {
                 </p>
               </div>
 
+              <div className="mt-5 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Posted by
+                </p>
+                <div className="mt-2 flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                    <UserRound className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">
+                      {listingAgent.name}
+                    </p>
+                    {listingAgent.agency && (
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {listingAgent.agency}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-5 space-y-3">
                 <button
                   type="button"
@@ -503,7 +546,7 @@ export default function ApartmentDetailClient({ apartment }) {
                 </button>
 
                 <a
-                  href={`https://wa.me/27796849423?text=${whatsappPrefill}`}
+                  href={`https://wa.me/${whatsappNumber}?text=${whatsappPrefill}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
