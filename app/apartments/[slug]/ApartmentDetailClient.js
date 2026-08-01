@@ -30,6 +30,7 @@ import { getListingAgent, getWhatsappNumber } from '@/app/lib/agentProfile';
 import {
   doc,
   setDoc,
+  updateDoc,
   addDoc,
   collection,
   increment,
@@ -126,46 +127,44 @@ export default function ApartmentDetailClient({ apartment }) {
   }
 
   const analyticsRef = useMemo(
-    () =>
-      doc(
+    () =>{
+      if (!apartment.id) return null;
+      return doc(
         db,
-        'appartment',
-        firestoreSafeKey(safeLocation),
-        'rooms',
-        firestoreSafeKey(safeTitle)
-      ),
-    [safeLocation, safeTitle]
+        'apartments',
+        apartment.id
+      )
+    },
+    [apartment.id]
   );
 
   const trackVisit = useCallback(async () => {
-    await setDoc(
+    console.log('Tracking visit for apartment:', analyticsRef);
+    if (!analyticsRef) return;
+    await updateDoc(
       analyticsRef,
       {
         visitCount: increment(1),
         lastVisitedAt: serverTimestamp(),
-        listingTitle: safeTitle,
-        listingLocation: safeLocation,
       },
-      { merge: true }
     );
-  }, [analyticsRef, safeLocation, safeTitle]);
+  }, [analyticsRef]);
 
   useEffect(() => {
     if (!apartment) return;
 
     trackVisit().catch((err) => {
-      console.error('Failed to track visit:', err);
-    });
+        console.error('Failed to track visit:', err);
+      });
   }, [apartment, trackVisit]);
 
   const trackContact = async () => {
-    await setDoc(
+    if (!analyticsRef) return;
+    await updateDoc(
       analyticsRef,
       {
         contactClick: increment(1),
         lastContactedAt: serverTimestamp(),
-        listingTitle: safeTitle,
-        listingLocation: safeLocation,
       },
       { merge: true }
     );
