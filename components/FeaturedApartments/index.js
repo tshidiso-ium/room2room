@@ -1,15 +1,117 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
-import { MapPin, BedDouble, Bath, ArrowRight, SearchX, UserRound } from 'lucide-react';
+import {
+  MapPin,
+  BedDouble,
+  Bath,
+  ArrowRight,
+  ChevronLeft,
+  ChevronRight,
+  SearchX,
+  UserRound,
+} from 'lucide-react';
 import { db } from '@/app/lib/firebaseClient';
 import { getListingAgent } from '@/app/lib/agentProfile';
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop';
+
+function ListingImageCarousel({ images, title }) {
+  const safeImages = images?.filter(Boolean)?.length ? images.filter(Boolean) : [FALLBACK_IMAGE];
+  const [currentImage, setCurrentImage] = useState(0);
+  const touchStartX = useRef(null);
+
+  const showPreviousImage = () => {
+    setCurrentImage((current) => (current === 0 ? safeImages.length - 1 : current - 1));
+  };
+
+  const showNextImage = () => {
+    setCurrentImage((current) => (current === safeImages.length - 1 ? 0 : current + 1));
+  };
+
+  const handleTouchStart = (event) => {
+    touchStartX.current = event.touches[0]?.clientX ?? null;
+  };
+
+  const handleTouchEnd = (event) => {
+    if (touchStartX.current === null) return;
+
+    const touchEndX = event.changedTouches[0]?.clientX ?? touchStartX.current;
+    const swipeDistance = touchEndX - touchStartX.current;
+    touchStartX.current = null;
+
+    if (Math.abs(swipeDistance) < 40) return;
+
+    if (swipeDistance > 0) {
+      showPreviousImage();
+    } else {
+      showNextImage();
+    }
+  };
+
+  return (
+    <div
+      className="relative h-56 touch-pan-y overflow-hidden"
+      role="region"
+      aria-label={`${title || 'Property'} image gallery`}
+      onTouchStart={handleTouchStart}
+      onTouchEnd={handleTouchEnd}
+    >
+      <Image
+        src={safeImages[currentImage]}
+        alt={`${title || 'Property'} image ${currentImage + 1} of ${safeImages.length}`}
+        fill
+        draggable={false}
+        className="select-none object-cover transition duration-500 group-hover:scale-105"
+        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+      />
+
+      {safeImages.length > 1 && (
+        <>
+          <button
+            type="button"
+            onClick={showPreviousImage}
+            className="absolute left-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-md backdrop-blur transition hover:scale-105 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Show previous property image"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </button>
+
+          <button
+            type="button"
+            onClick={showNextImage}
+            className="absolute right-3 top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-slate-900 shadow-md backdrop-blur transition hover:scale-105 hover:bg-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500"
+            aria-label="Show next property image"
+          >
+            <ChevronRight className="h-5 w-5" />
+          </button>
+
+          <div
+            className="absolute bottom-3 left-1/2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-slate-950/35 px-2.5 py-2 backdrop-blur-sm"
+            aria-label={`Image ${currentImage + 1} of ${safeImages.length}`}
+          >
+            {safeImages.map((_, index) => (
+              <button
+                key={index}
+                type="button"
+                onClick={() => setCurrentImage(index)}
+                className={`h-1.5 rounded-full transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white ${
+                  index === currentImage ? 'w-4 bg-white' : 'w-1.5 bg-white/60 hover:bg-white'
+                }`}
+                aria-label={`Show property image ${index + 1}`}
+                aria-current={index === currentImage ? 'true' : undefined}
+              />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
 
 export default function FeaturedApartments({ filters }) {
   const [apartments, setApartments] = useState([]);
@@ -173,7 +275,6 @@ export default function FeaturedApartments({ filters }) {
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-3">
           {filteredApartments.map((apt) => {
-            const imageSrc = apt.images?.[0] || FALLBACK_IMAGE;
             const locationLabel =
               (typeof apt.location === 'string'
                 ? apt.location
@@ -182,21 +283,14 @@ export default function FeaturedApartments({ filters }) {
             const listingAgent = getListingAgent(apt);
 
             return (
-              <Link
+              <article
                 key={apt.id}
-                href={`/apartments/${apt.slug || apt.id}`}
                 className="group overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl dark:border-slate-800 dark:bg-slate-900"
               >
-                <div className="relative h-56 overflow-hidden">
-                  <Image
-                    src={imageSrc}
-                    alt={apt.title || 'Property image'}
-                    fill
-                    className="object-cover transition duration-500 group-hover:scale-105"
-                    sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
-                  />
+                <div className="relative">
+                  <ListingImageCarousel images={apt.images} title={apt.title} />
 
-                  <div className="absolute left-4 top-4 flex items-center gap-2">
+                  <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2">
                     {apt.isAvailable && (
                       <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow">
                         Available now
@@ -210,7 +304,11 @@ export default function FeaturedApartments({ filters }) {
                   </div>
                 </div>
 
-                <div className="p-5">
+                <Link
+                  href={`/apartments/${apt.slug || apt.id}`}
+                  className="block p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-blue-500"
+                  aria-label={`View details for ${apt.title || 'this property'}`}
+                >
                   <div className="flex items-start justify-between gap-3">
                     <div>
                       <h3 className="line-clamp-1 text-lg font-semibold text-slate-900 dark:text-white">
@@ -268,8 +366,8 @@ export default function FeaturedApartments({ filters }) {
                       <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
                     </span>
                   </div>
-                </div>
-              </Link>
+                </Link>
+              </article>
             );
           })}
         </div>
