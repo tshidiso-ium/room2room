@@ -170,6 +170,7 @@ export default function AdminDashboard() {
     results.sort((a, b) => {
       if (sortBy === 'price-low') return Number(a.price || 0) - Number(b.price || 0);
       if (sortBy === 'price-high') return Number(b.price || 0) - Number(a.price || 0);
+      if (sortBy === 'most-viewed') return Number(b.visitCount || 0) - Number(a.visitCount || 0);
       if (sortBy === 'title') return (a.title || '').localeCompare(b.title || '');
       return (
         new Date(b.createdAt?.seconds ? b.createdAt.seconds * 1000 : 0) -
@@ -184,6 +185,7 @@ export default function AdminDashboard() {
     const total = apartments.length;
     const available = apartments.filter((apt) => apt.isAvailable === true).length;
     const unavailable = total - available;
+    const views = apartments.reduce((sum, apt) => sum + (Number(apt.visitCount) || 0), 0);
 
     const avgPrice =
       total > 0
@@ -192,7 +194,7 @@ export default function AdminDashboard() {
           )
         : 0;
 
-    return { total, available, unavailable, avgPrice };
+    return { total, available, unavailable, views, avgPrice };
   }, [apartments]);
 
   if (!user && loading) {
@@ -260,7 +262,7 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
           <StatCard
             title="Your listings"
             value={stats.total}
@@ -277,11 +279,19 @@ export default function AdminDashboard() {
             icon={<Eye className="h-5 w-5" />}
           />
           <StatCard
+            title="Listing page views"
+            value={stats.views.toLocaleString()}
+            icon={<Eye className="h-5 w-5" />}
+          />
+          <StatCard
             title="Average price"
             value={`R${stats.avgPrice.toLocaleString()}`}
             icon={<CircleDollarSign className="h-5 w-5" />}
           />
         </section>
+        <p className="-mt-5 mb-8 text-xs text-slate-500 dark:text-slate-400">
+          Page views count listing opens, including repeat visits from the same person.
+        </p>
 
         <section className="mb-8 rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -331,6 +341,7 @@ export default function AdminDashboard() {
                 <option value="newest">Newest first</option>
                 <option value="price-low">Price: low to high</option>
                 <option value="price-high">Price: high to low</option>
+                <option value="most-viewed">Most viewed</option>
                 <option value="title">Title: A to Z</option>
               </select>
             </div>
@@ -453,6 +464,10 @@ export default function AdminDashboard() {
                         <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800">
                           <Bath className="h-4 w-4" />
                           {apt.bathrooms ?? 1} bath
+                        </span>
+                        <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 font-medium text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                          <Eye className="h-4 w-4" />
+                          {(Number(apt.visitCount) || 0).toLocaleString()} page views
                         </span>
                       </div>
 

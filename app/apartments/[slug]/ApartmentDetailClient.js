@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import AppHeader from '@/components/header';
@@ -50,6 +50,7 @@ export default function ApartmentDetailClient({ apartment }) {
   const [isTrackingContact, setIsTrackingContact] = useState(false);
   const [formError, setFormError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const trackedListingId = useRef(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -139,7 +140,6 @@ export default function ApartmentDetailClient({ apartment }) {
   );
 
   const trackVisit = useCallback(async () => {
-    console.log('Tracking visit for apartment:', analyticsRef);
     if (!analyticsRef) return;
     await updateDoc(
       analyticsRef,
@@ -151,12 +151,13 @@ export default function ApartmentDetailClient({ apartment }) {
   }, [analyticsRef]);
 
   useEffect(() => {
-    if (!apartment) return;
+    if (!apartment?.id || trackedListingId.current === apartment.id) return;
+    trackedListingId.current = apartment.id;
 
     trackVisit().catch((err) => {
         console.error('Failed to track visit:', err);
       });
-  }, [apartment, trackVisit]);
+  }, [apartment?.id, trackVisit]);
 
   const trackContact = async () => {
     if (!analyticsRef) return;
