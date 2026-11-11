@@ -351,11 +351,11 @@ export default function FeaturedApartments({ filters }) {
                       <Bath className="h-4 w-4" />
                       {apt.bathrooms || 1} {Number(apt.bathrooms) === 1 ? 'Bathroom' : 'Bathrooms'}
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                    {/* <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
                       <Eye className="h-4 w-4" />
                       {(Number(apt.visitCount) || 0).toLocaleString()}{' '}
                       {Number(apt.visitCount) === 1 ? 'page view' : 'page views'}
-                    </span>
+                    </span> */}
                   </div>
 
                   {apt.description && (
