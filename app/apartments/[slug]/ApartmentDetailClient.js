@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import AppHeader from '@/components/header';
@@ -23,14 +23,21 @@ import {
   ShieldCheck,
   Moon,
   Sun,
+  UserRound,
+  Eye,
+  Flame,
 } from 'lucide-react';
 import { db } from '@/app/lib/firebaseClient';
+import { getListingAgent, getWhatsappNumber } from '@/app/lib/agentProfile';
+import { isHotListing } from '@/app/lib/listingPopularity';
 import {
   doc,
   setDoc,
+  updateDoc,
   addDoc,
   collection,
   increment,
+  onSnapshot,
   serverTimestamp,
 } from 'firebase/firestore';
 
@@ -47,6 +54,8 @@ export default function ApartmentDetailClient({ apartment }) {
   const [isTrackingContact, setIsTrackingContact] = useState(false);
   const [formError, setFormError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const [viewCount, setViewCount] = useState(Number(apartment?.visitCount) || 0);
+  const trackedListingId = useRef(null);
 
   const [form, setForm] = useState({
     name: '',
@@ -68,6 +77,8 @@ export default function ApartmentDetailClient({ apartment }) {
     }
     return apartment?.price || 'Price on request';
   }, [apartment?.price]);
+  const listingAgent = getListingAgent(apartment);
+  const whatsappNumber = getWhatsappNumber(listingAgent.phone);
 
   const whatsappPrefill = useMemo(() => {
     return encodeURIComponent(
@@ -88,14 +99,6 @@ export default function ApartmentDetailClient({ apartment }) {
       document.documentElement.classList.add('dark');
     }
   }, []);
-
-  useEffect(() => {
-    if (!apartment) return;
-
-    trackVisit().catch((err) => {
-      console.error('Failed to track visit:', err);
-    });
-  }, [apartment]);
 
   const toggleDarkMode = () => {
     const next = !darkMode;
@@ -129,35 +132,59 @@ export default function ApartmentDetailClient({ apartment }) {
       .replace(/-+/g, '-');
   }
 
-  const analyticsRef = doc(
-    db,
-    'appartment',
-    firestoreSafeKey(safeLocation),
-    'rooms',
-    firestoreSafeKey(safeTitle)
+  const analyticsRef = useMemo(
+    () =>{
+      if (!apartment.id) return null;
+      return doc(
+        db,
+        'apartments',
+        apartment.id
+      )
+    },
+    [apartment.id]
   );
 
-  const trackVisit = async () => {
-    await setDoc(
+  const trackVisit = useCallback(async () => {
+    if (!analyticsRef) return;
+    await updateDoc(
       analyticsRef,
       {
         visitCount: increment(1),
         lastVisitedAt: serverTimestamp(),
-        listingTitle: safeTitle,
-        listingLocation: safeLocation,
       },
-      { merge: true }
     );
-  };
+  }, [analyticsRef]);
+
+  useEffect(() => {
+    if (!apartment?.id || trackedListingId.current === apartment.id) return;
+    trackedListingId.current = apartment.id;
+
+    trackVisit().catch((err) => {
+        console.error('Failed to track visit:', err);
+      });
+  }, [apartment?.id, trackVisit]);
+
+  useEffect(() => {
+    if (!analyticsRef) return;
+
+    return onSnapshot(
+      analyticsRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setViewCount(Number(snapshot.data().visitCount) || 0);
+        }
+      },
+      (error) => console.error('Failed to load listing views:', error)
+    );
+  }, [analyticsRef]);
 
   const trackContact = async () => {
-    await setDoc(
+    if (!analyticsRef) return;
+    await updateDoc(
       analyticsRef,
       {
         contactClick: increment(1),
         lastContactedAt: serverTimestamp(),
-        listingTitle: safeTitle,
-        listingLocation: safeLocation,
       },
       { merge: true }
     );
@@ -194,6 +221,10 @@ export default function ApartmentDetailClient({ apartment }) {
         listingLocation: safeLocation,
         listingPrice: apartment?.price ?? safePrice,
         listingUrl: pageUrl,
+        agentId: listingAgent.id,
+        agentName: listingAgent.name,
+        agentEmail: listingAgent.email,
+        agentPhone: listingAgent.phone,
         createdAt: serverTimestamp(),
       });
 
@@ -231,7 +262,7 @@ export default function ApartmentDetailClient({ apartment }) {
           `Please contact me with more information.`
       );
 
-      window.open(`https://wa.me/27796849423?text=${userMessage}`, '_blank');
+      window.open(`https://wa.me/${whatsappNumber}?text=${userMessage}`, '_blank');
 
       setShowForm(false);
       setForm({
@@ -363,10 +394,16 @@ export default function ApartmentDetailClient({ apartment }) {
                   </>
                 )}
 
-                <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                <div className="absolute left-4 right-4 top-4 flex flex-wrap gap-2">
                   <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow">
                     Available now
                   </span>
+                  {isHotListing(viewCount) && (
+                    <span aria-label="Hot listing" className="inline-flex items-center gap-1 rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow">
+                      <Flame className="h-3.5 w-3.5" aria-hidden="true" />
+                      Hot
+                    </span>
+                  )}
                   {apartment?.propertyType && (
                     <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-slate-800 backdrop-blur dark:bg-slate-900/90 dark:text-slate-100">
                       {apartment.propertyType}
@@ -411,6 +448,23 @@ export default function ApartmentDetailClient({ apartment }) {
                   <div className="mt-3 flex items-center gap-2 text-slate-600 dark:text-slate-400">
                     <MapPin className="h-4 w-4" />
                     <span>{safeLocation}</span>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <UserRound className="h-4 w-4" />
+                    <span>
+                      Posted by{' '}
+                      <span className="font-medium text-slate-900 dark:text-white">
+                        {listingAgent.name}
+                      </span>
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <Eye className="h-4 w-4" />
+                    <span>
+                      {viewCount.toLocaleString()} {viewCount === 1 ? 'page view' : 'page views'}
+                    </span>
                   </div>
                 </div>
 
@@ -491,6 +545,27 @@ export default function ApartmentDetailClient({ apartment }) {
                 </p>
               </div>
 
+              <div className="mt-5 rounded-2xl bg-slate-50 p-4 dark:bg-slate-800">
+                <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-slate-400">
+                  Posted by
+                </p>
+                <div className="mt-2 flex items-start gap-3">
+                  <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-100 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                    <UserRound className="h-5 w-5" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900 dark:text-white">
+                      {listingAgent.name}
+                    </p>
+                    {listingAgent.agency && (
+                      <p className="text-sm text-slate-600 dark:text-slate-400">
+                        {listingAgent.agency}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               <div className="mt-5 space-y-3">
                 <button
                   type="button"
@@ -503,7 +578,7 @@ export default function ApartmentDetailClient({ apartment }) {
                 </button>
 
                 <a
-                  href={`https://wa.me/27796849423?text=${whatsappPrefill}`}
+                  href={`https://wa.me/${whatsappNumber}?text=${whatsappPrefill}`}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"

@@ -15,6 +15,10 @@ import {
   serverTimestamp,
 } from 'firebase/firestore';
 import {
+  buildAgentSnapshot,
+  upsertAgentProfile,
+} from '@/app/lib/agentProfile';
+import {
   UploadCloud,
   MapPin,
   BedDouble,
@@ -36,6 +40,8 @@ import Link from 'next/link';
 const initialForm = {
   title: '',
   location: '',
+  suburb: '',
+  city: '',
   price: '',
   bedrooms: '',
   bathrooms: '',
@@ -51,14 +57,49 @@ const initialForm = {
   },
 };
 
-export default function UploadPage() {
-  const { user } = useAuth();
+function splitLocationText(value) {
+  const location = String(value || '').trim();
+  const parts = location
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+  return {
+    location,
+    suburb: parts[0] || '',
+    city: parts.slice(1).join(', '),
+  };
+}
+
+function getLocationFields(location) {
+  if (typeof location === 'string') {
+    return splitLocationText(location);
+  }
+
+  const suburb = location?.suburb || '';
+  const city = location?.city || '';
+  const locationText = location?.address || location?.label || '';
+
+  if (!suburb && !city && locationText) {
+    return splitLocationText(locationText);
+  }
+
+  return {
+    location: locationText,
+    suburb,
+    city,
+  };
+}
+
+export default function UploadPage({ requireListingId = false } = {}) {
+  const { user, agentProfile } = useAuth();
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(false);
   const [pageReady, setPageReady] = useState(false);
   const [listingId, setListingId] = useState(null);
+  const [missingListingId, setMissingListingId] = useState(false);
   const [loadingListing, setLoadingListing] = useState(false);
   const [uploadingImages, setUploadingImages] = useState(false);
   const [error, setError] = useState('');
@@ -66,12 +107,15 @@ export default function UploadPage() {
   const [darkMode, setDarkMode] = useState(false);
 
   const [form, setForm] = useState(initialForm);
+  const isEditMode = requireListingId || Boolean(listingId);
+  const activeAgent = user ? buildAgentSnapshot(user, agentProfile || {}) : null;
 
   useEffect(() => {
     const id = searchParams.get('id');
     setListingId(id);
+    setMissingListingId(requireListingId && !id);
     setPageReady(true);
-  }, [searchParams]);
+  }, [requireListingId, searchParams]);
 
   useEffect(() => {
     const storedTheme =
@@ -91,7 +135,15 @@ export default function UploadPage() {
   }, [user, pageReady, router]);
 
   useEffect(() => {
+    if (!pageReady || !missingListingId) return;
+
+    setError('Missing listing ID.');
+    router.push('/admin/dashboard');
+  }, [missingListingId, pageReady, router]);
+
+  useEffect(() => {
     const fetchListing = async () => {
+      if (!pageReady || user === undefined || !user) return;
       if (!listingId) return;
 
       try {
@@ -109,12 +161,19 @@ export default function UploadPage() {
 
         const data = docSnap.data();
 
+        if (data.agentId && data.agentId !== user.uid) {
+          setError('You can only edit listings posted from your agent profile.');
+          router.push('/admin/dashboard');
+          return;
+        }
+
+        const locationFields = getLocationFields(data.location);
+
         setForm({
           title: data.title || '',
-          location:
-            typeof data.location === 'string'
-              ? data.location
-              : [data.location?.suburb, data.location?.city].filter(Boolean).join(', '),
+          location: locationFields.location,
+          suburb: locationFields.suburb,
+          city: locationFields.city,
           price: data.price || '',
           bedrooms: data.bedrooms || '',
           bathrooms: data.bathrooms || '',
@@ -140,7 +199,7 @@ export default function UploadPage() {
     if (pageReady) {
       fetchListing();
     }
-  }, [listingId, pageReady, router]);
+  }, [listingId, pageReady, router, user]);
 
   const toggleDarkMode = () => {
     const next = !darkMode;
@@ -235,9 +294,20 @@ export default function UploadPage() {
       .replace(/-+/g, '-');
 
   const normalizedPayload = useMemo(() => {
+    const address = form.location.trim();
+    const fallbackLocation = splitLocationText(address);
+    const suburb = form.suburb.trim() || fallbackLocation.suburb || address;
+    const city = form.city.trim() || fallbackLocation.city;
+    const locationLabel = [suburb, city].filter(Boolean).join(', ') || address;
+
     return {
       title: form.title.trim(),
-      location: form.location.trim(),
+      location: {
+        address,
+        suburb,
+        city,
+        label: locationLabel,
+      },
       price: Number(form.price) || 0,
       bedrooms: Number(form.bedrooms) || 0,
       bathrooms: Number(form.bathrooms) || 1,
@@ -256,6 +326,24 @@ export default function UploadPage() {
     setError('');
     setSuccessMessage('');
 
+    if (!user) {
+      setError('Please sign in with an agent profile before saving listings.');
+      setLoading(false);
+      return;
+    }
+
+    if (requireListingId && !listingId) {
+      setError('Missing listing ID.');
+      setLoading(false);
+      return;
+    }
+
+    if (!form.suburb.trim() && !form.location.trim()) {
+      setError('Please add a suburb, area, address, or landmark.');
+      setLoading(false);
+      return;
+    }
+
     if (!form.images.length) {
       setError('Please upload at least one property image.');
       setLoading(false);
@@ -263,15 +351,27 @@ export default function UploadPage() {
     }
 
     try {
+      const savedAgentProfile = await upsertAgentProfile(user, agentProfile || {});
+      const agent = buildAgentSnapshot(user, savedAgentProfile);
+      const listingPayload = {
+        ...normalizedPayload,
+        agentId: agent.id,
+        agentName: agent.name,
+        agentEmail: agent.email,
+        agentPhone: agent.phone,
+        agentAgency: agent.agency,
+        agent,
+      };
+
       if (listingId) {
         await updateDoc(doc(db, 'apartments', listingId), {
-          ...normalizedPayload,
+          ...listingPayload,
           updatedAt: serverTimestamp(),
         });
         setSuccessMessage('Listing updated successfully.');
       } else {
         await addDoc(collection(db, 'apartments'), {
-          ...normalizedPayload,
+          ...listingPayload,
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -305,6 +405,14 @@ export default function UploadPage() {
     );
   }
 
+  if (missingListingId) {
+    return (
+      <div className="min-h-screen bg-slate-50 px-4 py-12 text-center text-slate-600 dark:bg-slate-950 dark:text-slate-300">
+        Missing listing ID. Redirecting...
+      </div>
+    );
+  }
+
   return (
     <main className="min-h-screen bg-slate-50 text-slate-900 transition-colors dark:bg-slate-950 dark:text-white">
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
@@ -314,7 +422,7 @@ export default function UploadPage() {
               Listing management
             </span>
             <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl">
-              {listingId ? 'Edit property listing' : 'Create a new property listing'}
+              {isEditMode ? 'Edit property listing' : 'Create a new property listing'}
             </h1>
             <p className="mt-2 max-w-2xl text-sm text-slate-600 dark:text-slate-400 sm:text-base">
               Add high-quality listing details, upload strong visuals, and keep your
@@ -405,7 +513,35 @@ export default function UploadPage() {
                   </div>
                 </Field>
 
-                <Field label="Location">
+                <Field label="Suburb / area">
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
+                    <input
+                      type="text"
+                      name="suburb"
+                      value={form.suburb}
+                      onChange={handleChange}
+                      placeholder="e.g. Ebony Park"
+                      className={`${inputClass} pl-10`}
+                    />
+                  </div>
+                </Field>
+
+                <Field label="City">
+                  <div className="relative">
+                    <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
+                    <input
+                      type="text"
+                      name="city"
+                      value={form.city}
+                      onChange={handleChange}
+                      placeholder="e.g. Johannesburg"
+                      className={`${inputClass} pl-10`}
+                    />
+                  </div>
+                </Field>
+
+                <Field label="Address or landmark">
                   <div className="relative">
                     <MapPin className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500 dark:text-slate-400" />
                     <input
@@ -413,9 +549,8 @@ export default function UploadPage() {
                       name="location"
                       value={form.location}
                       onChange={handleChange}
-                      placeholder="e.g. Midrand, Johannesburg"
+                      placeholder="e.g. Near Mall of Tembisa"
                       className={`${inputClass} pl-10`}
-                      required
                     />
                   </div>
                 </Field>
@@ -551,6 +686,24 @@ export default function UploadPage() {
 
           <aside className="space-y-8 lg:col-span-4">
             <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+              <h2 className="text-xl font-semibold">Agent profile</h2>
+
+              <div className="mt-5 rounded-2xl bg-slate-50 px-4 py-4 dark:bg-slate-800">
+                <p className="text-sm font-semibold text-slate-900 dark:text-white">
+                  {activeAgent?.name || 'Agent profile'}
+                </p>
+                {activeAgent?.agency && (
+                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                    {activeAgent.agency}
+                  </p>
+                )}
+                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                  {activeAgent?.email || 'Signed-in agent'}
+                </p>
+              </div>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
               <h2 className="text-xl font-semibold">Listing options</h2>
 
               <div className="mt-5 space-y-4">
@@ -612,6 +765,14 @@ export default function UploadPage() {
               <div className="mt-5 space-y-3 text-sm">
                 <SummaryRow label="Title" value={form.title || 'Not set'} />
                 <SummaryRow
+                  label="Location"
+                  value={
+                    [form.suburb, form.city].filter(Boolean).join(', ') ||
+                    form.location ||
+                    'Not set'
+                  }
+                />
+                <SummaryRow
                   label="Price"
                   value={form.price ? `R${Number(form.price).toLocaleString()}` : 'Not set'}
                 />
@@ -620,18 +781,18 @@ export default function UploadPage() {
                   label="Status"
                   value={form.isAvailable ? 'Available' : 'Unavailable'}
                 />
+                <SummaryRow label="Agent" value={activeAgent?.name || 'Not set'} />
               </div>
 
               <button
                 type="submit"
                 disabled={loading || uploadingImages}
-                onClick={handleSubmit}
                 className="mt-6 inline-flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white shadow-md transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-70"
               >
                 <Save className="h-4 w-4" />
                 {loading
                   ? 'Saving...'
-                  : listingId
+                  : isEditMode
                   ? 'Update listing'
                   : 'Publish listing'}
               </button>

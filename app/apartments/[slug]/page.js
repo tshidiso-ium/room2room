@@ -16,7 +16,7 @@ export const dynamicParams = true;
 function serializeApartment(doc) {
   const data = doc.data();
 
-  return {
+  const apartment = {
     id: doc.id,
     ...data,
     createdAt: data.createdAt?.seconds
@@ -26,6 +26,10 @@ function serializeApartment(doc) {
       ? new Date(data.updatedAt.seconds * 1000).toISOString()
       : null,
   };
+
+  // Firestore timestamps (including visit/contact dates) must be plain values
+  // before this object crosses the Server Component boundary.
+  return JSON.parse(JSON.stringify(apartment));
 }
 
 async function getApartmentBySlug(slug) {
