@@ -24,7 +24,8 @@ const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop';
 
 function ListingImageCarousel({ images, title }) {
-  const safeImages = images?.filter(Boolean)?.length ? images.filter(Boolean) : [FALLBACK_IMAGE];
+  const listingImages = images?.filter(Boolean) || [];
+  const safeImages = listingImages.length ? listingImages : [FALLBACK_IMAGE];
   const [currentImage, setCurrentImage] = useState(0);
   const touchStartX = useRef(null);
 
@@ -58,7 +59,7 @@ function ListingImageCarousel({ images, title }) {
 
   return (
     <div
-      className="relative h-56 touch-pan-y overflow-hidden"
+      className="relative h-56 touch-pan-y overflow-hidden bg-slate-100 dark:bg-slate-800"
       role="region"
       aria-label={`${title || 'Property'} image gallery`}
       onTouchStart={handleTouchStart}
@@ -69,8 +70,10 @@ function ListingImageCarousel({ images, title }) {
         alt={`${title || 'Property'} image ${currentImage + 1} of ${safeImages.length}`}
         fill
         draggable={false}
+        loading="lazy"
+        quality={70}
         className="select-none object-cover transition duration-500 group-hover:scale-105"
-        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
+        sizes="(max-width: 640px) calc(100vw - 2rem), (max-width: 1280px) calc(50vw - 2rem), 400px"
       />
 
       {safeImages.length > 1 && (
@@ -348,11 +351,11 @@ export default function FeaturedApartments({ filters }) {
                       <Bath className="h-4 w-4" />
                       {apt.bathrooms || 1} {Number(apt.bathrooms) === 1 ? 'Bathroom' : 'Bathrooms'}
                     </span>
-                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                    {/* <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
                       <Eye className="h-4 w-4" />
                       {(Number(apt.visitCount) || 0).toLocaleString()}{' '}
                       {Number(apt.visitCount) === 1 ? 'page view' : 'page views'}
-                    </span>
+                    </span> */}
                   </div>
 
                   {apt.description && (

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   createUserWithEmailAndPassword,
   getAuth,
@@ -39,6 +39,12 @@ export default function AdminLogin() {
   const router = useRouter();
   const auth = getAuth(app);
   const isSignup = mode === 'signup';
+
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get('mode') === 'signup') {
+      setMode('signup');
+    }
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
