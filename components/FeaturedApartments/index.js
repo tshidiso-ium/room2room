@@ -13,9 +13,12 @@ import {
   ChevronRight,
   SearchX,
   UserRound,
+  Eye,
+  Flame,
 } from 'lucide-react';
 import { db } from '@/app/lib/firebaseClient';
 import { getListingAgent } from '@/app/lib/agentProfile';
+import { isHotListing } from '@/app/lib/listingPopularity';
 
 const FALLBACK_IMAGE =
   'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?q=80&w=1200&auto=format&fit=crop';
@@ -290,10 +293,16 @@ export default function FeaturedApartments({ filters }) {
                 <div className="relative">
                   <ListingImageCarousel images={apt.images} title={apt.title} />
 
-                  <div className="pointer-events-none absolute left-4 top-4 flex items-center gap-2">
+                  <div className="pointer-events-none absolute left-4 right-4 top-4 flex flex-wrap items-center gap-2">
                     {apt.isAvailable && (
                       <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow">
                         Available now
+                      </span>
+                    )}
+                    {isHotListing(apt.visitCount) && (
+                      <span aria-label="Hot listing" className="inline-flex items-center gap-1 rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow">
+                        <Flame className="h-3.5 w-3.5" aria-hidden="true" />
+                        Hot
                       </span>
                     )}
                     {apt.propertyType && (
@@ -338,6 +347,11 @@ export default function FeaturedApartments({ filters }) {
                     <span className="inline-flex items-center gap-2 rounded-full bg-slate-100 px-3 py-1.5 dark:bg-slate-800">
                       <Bath className="h-4 w-4" />
                       {apt.bathrooms || 1} {Number(apt.bathrooms) === 1 ? 'Bathroom' : 'Bathrooms'}
+                    </span>
+                    <span className="inline-flex items-center gap-2 rounded-full bg-blue-50 px-3 py-1.5 text-blue-700 dark:bg-blue-500/10 dark:text-blue-300">
+                      <Eye className="h-4 w-4" />
+                      {(Number(apt.visitCount) || 0).toLocaleString()}{' '}
+                      {Number(apt.visitCount) === 1 ? 'page view' : 'page views'}
                     </span>
                   </div>
 

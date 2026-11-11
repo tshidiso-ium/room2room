@@ -24,9 +24,12 @@ import {
   Moon,
   Sun,
   UserRound,
+  Eye,
+  Flame,
 } from 'lucide-react';
 import { db } from '@/app/lib/firebaseClient';
 import { getListingAgent, getWhatsappNumber } from '@/app/lib/agentProfile';
+import { isHotListing } from '@/app/lib/listingPopularity';
 import {
   doc,
   setDoc,
@@ -34,6 +37,7 @@ import {
   addDoc,
   collection,
   increment,
+  onSnapshot,
   serverTimestamp,
 } from 'firebase/firestore';
 
@@ -50,6 +54,7 @@ export default function ApartmentDetailClient({ apartment }) {
   const [isTrackingContact, setIsTrackingContact] = useState(false);
   const [formError, setFormError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
+  const [viewCount, setViewCount] = useState(Number(apartment?.visitCount) || 0);
   const trackedListingId = useRef(null);
 
   const [form, setForm] = useState({
@@ -158,6 +163,20 @@ export default function ApartmentDetailClient({ apartment }) {
         console.error('Failed to track visit:', err);
       });
   }, [apartment?.id, trackVisit]);
+
+  useEffect(() => {
+    if (!analyticsRef) return;
+
+    return onSnapshot(
+      analyticsRef,
+      (snapshot) => {
+        if (snapshot.exists()) {
+          setViewCount(Number(snapshot.data().visitCount) || 0);
+        }
+      },
+      (error) => console.error('Failed to load listing views:', error)
+    );
+  }, [analyticsRef]);
 
   const trackContact = async () => {
     if (!analyticsRef) return;
@@ -375,10 +394,16 @@ export default function ApartmentDetailClient({ apartment }) {
                   </>
                 )}
 
-                <div className="absolute left-4 top-4 flex flex-wrap gap-2">
+                <div className="absolute left-4 right-4 top-4 flex flex-wrap gap-2">
                   <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow">
                     Available now
                   </span>
+                  {isHotListing(viewCount) && (
+                    <span aria-label="Hot listing" className="inline-flex items-center gap-1 rounded-full bg-orange-500 px-3 py-1 text-xs font-semibold text-white shadow">
+                      <Flame className="h-3.5 w-3.5" aria-hidden="true" />
+                      Hot
+                    </span>
+                  )}
                   {apartment?.propertyType && (
                     <span className="rounded-full bg-white/90 px-3 py-1 text-xs font-medium text-slate-800 backdrop-blur dark:bg-slate-900/90 dark:text-slate-100">
                       {apartment.propertyType}
@@ -432,6 +457,13 @@ export default function ApartmentDetailClient({ apartment }) {
                       <span className="font-medium text-slate-900 dark:text-white">
                         {listingAgent.name}
                       </span>
+                    </span>
+                  </div>
+
+                  <div className="mt-3 flex items-center gap-2 text-slate-600 dark:text-slate-400">
+                    <Eye className="h-4 w-4" />
+                    <span>
+                      {viewCount.toLocaleString()} {viewCount === 1 ? 'page view' : 'page views'}
                     </span>
                   </div>
                 </div>
