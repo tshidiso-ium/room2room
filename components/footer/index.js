@@ -69,7 +69,7 @@ export default function AppFooter() {
                 <FaWhatsapp />
               </a>
 
-              <a
+              {/* <a
                 href="https://instagram.com/tshidiso_modiko"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -85,7 +85,7 @@ export default function AppFooter() {
                 className="flex h-10 w-10 items-center justify-center rounded-full bg-white shadow-sm transition hover:bg-blue-50 hover:text-blue-600 dark:bg-slate-900 dark:hover:bg-blue-500/10 dark:hover:text-blue-400"
               >
                 <FaFacebook />
-              </a>
+              </a> */}
 
               {/* Optional X (Twitter) */}
               {/* 
