@@ -224,7 +224,7 @@ export default function ContactPage() {
                   </div>
                 )}
 
-                <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+                <form id="contact-form" onSubmit={handleSubmit} className="mt-6 scroll-mt-24 space-y-5">
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div>
                       <label className="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">

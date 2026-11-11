@@ -2,6 +2,7 @@
 
 import Head from 'next/head';
 import Script from 'next/script';
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import AppHeader from '@/components/header';
 import SearchBar from '@/components/SearchBar';
@@ -9,7 +10,7 @@ import FeaturedApartments from '@/components/FeaturedApartments';
 import AppFooter from '@/components/footer';
 import { db } from '@/app/lib/firebaseClient';
 import { doc, setDoc, increment, serverTimestamp } from 'firebase/firestore';
-import { Moon, Sun, ShieldCheck, MapPinHouse, Sparkles } from 'lucide-react';
+import { Moon, Sun, ShieldCheck, MapPinHouse, Sparkles, UserPlus, Building2, Eye, ArrowRight } from 'lucide-react';
 
 const SITE_URL = 'https://www.tembisaroomfinders.co.za';
 const SITE_NAME = 'Tembisa Room Finders';
@@ -238,24 +239,85 @@ export default function HomePage() {
             </div>
           </section>
 
+          <section aria-labelledby="become-agent-heading" className="mx-auto max-w-7xl px-4 pt-14 sm:px-6 lg:px-8">
+            <div className="relative overflow-hidden rounded-3xl border border-blue-800 bg-gradient-to-br from-blue-900 via-blue-950 to-slate-900 px-6 py-10 text-white shadow-xl dark:border-blue-700/50 sm:px-10 sm:py-12 lg:px-14">
+              <div className="pointer-events-none absolute -right-20 -top-28 h-72 w-72 rounded-full bg-blue-500/25 blur-3xl" />
+              <div className="pointer-events-none absolute -bottom-32 left-1/3 h-72 w-72 rounded-full bg-yellow-400/10 blur-3xl" />
+
+              <div className="relative grid gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,0.8fr)] lg:items-center">
+                <div>
+                  <span className="inline-flex items-center gap-2 rounded-full border border-yellow-300/30 bg-yellow-400/10 px-3 py-1 text-sm font-semibold text-yellow-200">
+                    <UserPlus className="h-4 w-4" />
+                    For property agents
+                  </span>
+                  <h2 id="become-agent-heading" className="mt-5 max-w-2xl text-3xl font-bold tracking-tight sm:text-4xl">
+                    Have a place to rent? Become an agent.
+                  </h2>
+                  <p className="mt-4 max-w-xl text-sm leading-7 text-slate-300 sm:text-base">
+                    Create your agent profile, share your available rooms and properties, and connect with renters looking in Tembisa.
+                  </p>
+
+                  <div className="mt-7 flex flex-wrap items-center gap-3">
+                    <Link
+                      href="/admin/login?mode=signup"
+                      className="inline-flex items-center justify-center gap-2 rounded-2xl bg-white px-5 py-3 text-sm font-bold text-blue-900 transition hover:bg-blue-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    >
+                      Become an agent
+                      <ArrowRight className="h-4 w-4" />
+                    </Link>
+                    <Link
+                      href="/admin/login"
+                      className="inline-flex items-center rounded-2xl border border-white/25 px-5 py-3 text-sm font-semibold text-white transition hover:bg-white/10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                    >
+                      Already an agent? Sign in
+                    </Link>
+                  </div>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-3 lg:grid-cols-1">
+                  <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <UserPlus className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" />
+                    <div>
+                      <p className="font-semibold">Create your profile</p>
+                      <p className="mt-1 text-sm text-slate-300">Add your name and contact details.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <Building2 className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" />
+                    <div>
+                      <p className="font-semibold">Post your listings</p>
+                      <p className="mt-1 text-sm text-slate-300">Show photos, prices, and property details.</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-3 rounded-2xl border border-white/10 bg-white/5 p-4">
+                    <Eye className="mt-0.5 h-5 w-5 shrink-0 text-yellow-300" />
+                    <div>
+                      <p className="font-semibold">See listing interest</p>
+                      <p className="mt-1 text-sm text-slate-300">Check page views in your agent dashboard.</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </section>
+
           <FeaturedApartments filters={filters} />
 
           <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
             <div className="rounded-3xl border border-slate-200 bg-gradient-to-br from-blue-900 to-slate-900 px-6 py-10 text-white shadow-xl dark:border-slate-800">
               <div className="mx-auto max-w-3xl text-center">
                 <h2 className="text-2xl font-bold sm:text-3xl">
-                  Looking for the right place faster?
+                  Can’t find what you’re looking for?
                 </h2>
                 <p className="mt-3 text-sm text-white/80 sm:text-base">
-                  Use our filters to narrow down your ideal rental, then contact the agent directly
-                  from the listing page.
+                  Tell us what kind of place you need using our contact form, and we’ll help you with your search.
                 </p>
-                <a
-                  href="#featured-listings"
+                <Link
+                  href="/contact#contact-form"
                   className="mt-6 inline-flex items-center rounded-2xl bg-white px-5 py-3 text-sm font-semibold text-slate-900 transition hover:bg-slate-100"
                 >
-                  Browse available properties
-                </a>
+                  Get in touch
+                </Link>
               </div>
             </div>
           </section>
