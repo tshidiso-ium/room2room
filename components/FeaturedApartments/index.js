@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
+import { collection, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
 import {
   MapPin,
   BedDouble,
@@ -150,9 +150,28 @@ export default function FeaturedApartments({ filters }) {
           }),
         ]);
         const listingsById = new Map();
-        for (const item of [...snapshot.docs, ...promotedSnapshot.docs]) {
-          const listing = { id: item.id, ...item.data() };
-          if (listing.isAvailable === true) listingsById.set(item.id, listing);
+        const addVisibleListings = (docs) => {
+          for (const item of docs) {
+            const listing = { id: item.id, ...item.data() };
+            if (listing.isAvailable === true && listing.isSuspended !== true) {
+              listingsById.set(item.id, listing);
+            }
+          }
+        };
+        addVisibleListings(snapshot.docs);
+        addVisibleListings(promotedSnapshot.docs);
+
+        let latestPage = snapshot;
+        while (listingsById.size < 12 && latestPage.docs.length === 12) {
+          const nextPageQuery = query(
+            collection(db, 'apartments'),
+            where('isAvailable', '==', true),
+            orderBy('createdAt', 'desc'),
+            startAfter(latestPage.docs[latestPage.docs.length - 1]),
+            limit(12)
+          );
+          latestPage = await getDocs(nextPageQuery);
+          addVisibleListings(latestPage.docs);
         }
         const listings = [...listingsById.values()]
           .sort((a, b) =>

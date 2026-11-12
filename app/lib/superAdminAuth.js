@@ -30,9 +30,17 @@ export async function requireSuperAdmin(request) {
   try {
     const decodedToken = await adminAuth.verifyIdToken(match[1], true);
     const user = await adminAuth.getUser(decodedToken.uid);
-    if (user.disabled || !user.emailVerified || !allowedEmails.includes((user.email || '').toLowerCase())) {
+    if (user.disabled || !allowedEmails.includes((user.email || '').toLowerCase())) {
       return {
         error: NextResponse.json({ error: 'Super admin access is required.' }, { status: 403 }),
+      };
+    }
+    if (!user.emailVerified) {
+      return {
+        error: NextResponse.json(
+          { error: 'Verify your email to access the super admin dashboard.', emailVerificationRequired: true },
+          { status: 403 }
+        ),
       };
     }
 

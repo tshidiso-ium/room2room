@@ -55,6 +55,7 @@ export default function ApartmentDetailClient({ apartment }) {
   const [formError, setFormError] = useState('');
   const [darkMode, setDarkMode] = useState(false);
   const [viewCount, setViewCount] = useState(Number(apartment?.visitCount) || 0);
+  const [isSuspended, setIsSuspended] = useState(apartment?.isSuspended === true);
   const trackedListingId = useRef(null);
 
   const [form, setForm] = useState({
@@ -172,28 +173,29 @@ export default function ApartmentDetailClient({ apartment }) {
       (snapshot) => {
         if (snapshot.exists()) {
           setViewCount(Number(snapshot.data().visitCount) || 0);
+          setIsSuspended(snapshot.data().isSuspended === true);
+          if (snapshot.data().isSuspended === true) setShowForm(false);
         }
       },
       (error) => console.error('Failed to load listing views:', error)
     );
   }, [analyticsRef]);
 
-  const trackContact = async () => {
-    if (!analyticsRef) return;
-    await updateDoc(
-      analyticsRef,
-      {
-        contactClick: increment(1),
-        lastContactedAt: serverTimestamp(),
-      },
-      { merge: true }
-    );
+  const trackContact = async (action) => {
+    if (!apartment?.id) return;
+    const response = await fetch('/api/contact-click', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ listingId: apartment.id, action }),
+      keepalive: action === 'quickWhatsapp',
+    });
+    if (!response.ok) throw new Error(`Contact tracking failed (${response.status})`);
   };
 
   const countEventClick = async () => {
     try {
       setIsTrackingContact(true);
-      await trackContact();
+      await trackContact('contactAgent');
       setShowForm(true);
     } catch (err) {
       console.error('countEventClick:', err);
@@ -201,6 +203,12 @@ export default function ApartmentDetailClient({ apartment }) {
     } finally {
       setIsTrackingContact(false);
     }
+  };
+
+  const trackQuickWhatsappClick = () => {
+    trackContact('quickWhatsapp').catch((error) =>
+      console.error('Failed to track quick WhatsApp click:', error)
+    );
   };
 
   const handleFormChange = (e) => {
@@ -300,6 +308,20 @@ export default function ApartmentDetailClient({ apartment }) {
       icon: <FaParking className="text-lg" />,
     },
   ];
+
+  if (isSuspended) {
+    return (
+      <div className="flex min-h-screen flex-col bg-white text-slate-900 dark:bg-slate-950 dark:text-white">
+        <AppHeader />
+        <main className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center justify-center px-4 py-20 text-center">
+          <h1 className="text-3xl font-bold">Listing unavailable</h1>
+          <p className="mt-3 text-slate-600 dark:text-slate-400">This listing has been suspended and is no longer available to visitors.</p>
+          <Link href="/" className="mt-6 rounded-2xl bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800">Browse other listings</Link>
+        </main>
+        <AppFooter />
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen flex-col bg-white text-slate-900 transition-colors dark:bg-slate-950 dark:text-white">
@@ -581,6 +603,7 @@ export default function ApartmentDetailClient({ apartment }) {
                   href={`https://wa.me/${whatsappNumber}?text=${whatsappPrefill}`}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={trackQuickWhatsappClick}
                   className="inline-flex w-full items-center justify-center rounded-2xl border border-slate-300 px-5 py-3 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
                 >
                   Quick WhatsApp message

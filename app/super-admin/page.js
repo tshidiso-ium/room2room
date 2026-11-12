@@ -27,6 +27,12 @@ function Metric({ label, value, icon: Icon }) {
   );
 }
 
+function listingAgentKey(listing) {
+  if (listing.agentId) return `id:${listing.agentId}`;
+  const name = (listing.agentName || '').trim().toLowerCase();
+  return name ? `name:${name}` : 'unknown';
+}
+
 export default function SuperAdminPage() {
   const [user, setUser] = useState(undefined);
   const [overview, setOverview] = useState(null);
@@ -35,6 +41,10 @@ export default function SuperAdminPage() {
   const [busy, setBusy] = useState('');
   const [accountSearch, setAccountSearch] = useState('');
   const [listingSearch, setListingSearch] = useState('');
+  const [listingAgentFilter, setListingAgentFilter] = useState('');
+  const [listingAvailabilityFilter, setListingAvailabilityFilter] = useState('');
+  const [listingVisibilityFilter, setListingVisibilityFilter] = useState('');
+  const [listingPlacementFilter, setListingPlacementFilter] = useState('');
   const [verificationMessage, setVerificationMessage] = useState('');
   const [, setVerificationRefresh] = useState(0);
   const auth = getAuth(app);
@@ -110,8 +120,32 @@ export default function SuperAdminPage() {
     const search = listingSearch.trim().toLowerCase();
     return (overview?.listings || [])
       .filter((listing) => `${listing.title} ${listing.agentName} ${listing.slug}`.toLowerCase().includes(search))
+      .filter((listing) => !listingAgentFilter || listingAgentKey(listing) === listingAgentFilter)
+      .filter((listing) => !listingAvailabilityFilter ||
+        (listingAvailabilityFilter === 'available') === listing.isAvailable)
+      .filter((listing) => !listingVisibilityFilter ||
+        (listingVisibilityFilter === 'suspended') === listing.isSuspended)
+      .filter((listing) => !listingPlacementFilter ||
+        (listingPlacementFilter === 'promoted') === listing.isPromoted)
       .sort((a, b) => Number(b.isPromoted) - Number(a.isPromoted) || Number(b.visitCount) - Number(a.visitCount));
-  }, [overview, listingSearch]);
+  }, [overview, listingSearch, listingAgentFilter, listingAvailabilityFilter, listingVisibilityFilter, listingPlacementFilter]);
+
+  const listingAgents = useMemo(() => {
+    const usersById = new Map((overview?.users || []).map((account) => [account.uid, account]));
+    const agentsByKey = new Map();
+    for (const listing of overview?.listings || []) {
+      const key = listingAgentKey(listing);
+      const account = usersById.get(listing.agentId);
+      const name = listing.agentName || account?.name || account?.email || 'Unknown agent';
+      const detail = account?.email && account.email !== name
+        ? account.email
+        : listing.agentId && !account?.email ? listing.agentId.slice(0, 8) : '';
+      const label = detail ? `${name} · ${detail}` : name;
+      if (!agentsByKey.has(key)) agentsByKey.set(key, { key, label, count: 0 });
+      agentsByKey.get(key).count += 1;
+    }
+    return [...agentsByKey.values()].sort((a, b) => a.label.localeCompare(b.label));
+  }, [overview]);
 
   const listings = overview?.listings || [];
   const accounts = overview?.users || [];
@@ -185,11 +219,12 @@ export default function SuperAdminPage() {
 
         {overview && (
           <>
-            <section aria-label="Site totals" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            <section aria-label="Site totals" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
               <Metric label="Public page views" value={traffic.pageViews} icon={Eye} />
               <Metric label="Accounts" value={accounts.length} icon={Users} />
               <Metric label="Listings" value={listings.length} icon={Building2} />
-              <Metric label="Promoted listings" value={listings.filter((item) => item.isPromoted).length} icon={Star} />
+              <Metric label="Suspended listings" value={listings.filter((item) => item.isSuspended).length} icon={ShieldCheck} />
+              <Metric label="Visible promoted" value={listings.filter((item) => item.isPromoted && !item.isSuspended).length} icon={Star} />
             </section>
 
             <section className="mt-8 grid gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
@@ -213,7 +248,7 @@ export default function SuperAdminPage() {
                 <div className="mt-4 space-y-3">
                   {[...listings].sort((a, b) => b.visitCount - a.visitCount).slice(0, 5).map((listing) => (
                     <div key={listing.id} className="flex items-center justify-between gap-3 border-b border-slate-100 pb-3 last:border-0">
-                      <Link href={`/apartments/${listing.slug}`} className="truncate font-medium text-blue-800 hover:underline" target="_blank">{listing.title}</Link>
+                      {listing.isSuspended ? <span className="truncate font-medium text-slate-600">{listing.title} (suspended)</span> : <Link href={`/apartments/${listing.slug}`} className="truncate font-medium text-blue-800 hover:underline" target="_blank">{listing.title}</Link>}
                       <span className="shrink-0 text-sm text-slate-600">{listing.visitCount.toLocaleString()} views</span>
                     </div>
                   ))}
@@ -252,22 +287,113 @@ export default function SuperAdminPage() {
             </section>
 
             <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-              <div className="flex flex-wrap items-center justify-between gap-3">
-                <div><h2 className="text-xl font-bold">All listings</h2><p className="mt-1 text-sm text-slate-500">Promoted listings appear first in Featured listings.</p></div>
-                <input aria-label="Search listings" value={listingSearch} onChange={(event) => setListingSearch(event.target.value)} placeholder="Search listings" className="w-full rounded-xl border border-slate-300 px-3 py-2 text-sm sm:w-64" />
+              <div>
+                <div><h2 className="text-xl font-bold">All listings</h2><p className="mt-1 text-sm text-slate-500">See views and clicks on each WhatsApp option. Contact Agent opens the enquiry form; Quick WhatsApp opens WhatsApp directly.</p><p className="mt-1 text-sm text-slate-500">Suspended listings are hidden from public pages until restored. Promoted listings appear first in Featured listings.</p></div>
+              </div>
+              <div className="mt-5 grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+                <label className="text-sm font-medium text-slate-700">
+                  Search listings
+                  <input
+                    value={listingSearch}
+                    onChange={(event) => setListingSearch(event.target.value)}
+                    placeholder="Title or agent"
+                    className="mt-1 block w-full rounded-xl border border-slate-300 px-3 py-2 text-sm font-normal"
+                  />
+                </label>
+                <label className="text-sm font-medium text-slate-700">
+                  Agent
+                  <select
+                    value={listingAgentFilter}
+                    onChange={(event) => setListingAgentFilter(event.target.value)}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-normal"
+                  >
+                    <option value="">All agents</option>
+                    {listingAgents.map((agent) => (
+                      <option key={agent.key} value={agent.key}>
+                        {agent.label} ({agent.count})
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="text-sm font-medium text-slate-700">
+                  Availability
+                  <select
+                    value={listingAvailabilityFilter}
+                    onChange={(event) => setListingAvailabilityFilter(event.target.value)}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-normal"
+                  >
+                    <option value="">Any availability</option>
+                    <option value="available">Available</option>
+                    <option value="unavailable">Unavailable</option>
+                  </select>
+                </label>
+                <label className="text-sm font-medium text-slate-700">
+                  Visibility
+                  <select
+                    value={listingVisibilityFilter}
+                    onChange={(event) => setListingVisibilityFilter(event.target.value)}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-normal"
+                  >
+                    <option value="">Any visibility</option>
+                    <option value="visible">Visible</option>
+                    <option value="suspended">Suspended</option>
+                  </select>
+                </label>
+                <label className="text-sm font-medium text-slate-700">
+                  Placement
+                  <select
+                    value={listingPlacementFilter}
+                    onChange={(event) => setListingPlacementFilter(event.target.value)}
+                    className="mt-1 block w-full rounded-xl border border-slate-300 bg-white px-3 py-2 text-sm font-normal"
+                  >
+                    <option value="">Any placement</option>
+                    <option value="promoted">Promoted</option>
+                    <option value="standard">Standard</option>
+                  </select>
+                </label>
+              </div>
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-sm text-slate-500">
+                <span>Showing {visibleListings.length} of {listings.length} listings</span>
+                {(listingSearch || listingAgentFilter || listingAvailabilityFilter || listingVisibilityFilter || listingPlacementFilter) && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setListingSearch('');
+                      setListingAgentFilter('');
+                      setListingAvailabilityFilter('');
+                      setListingVisibilityFilter('');
+                      setListingPlacementFilter('');
+                    }}
+                    className="font-medium text-blue-700 hover:underline"
+                  >
+                    Clear filters
+                  </button>
+                )}
               </div>
               <div className="mt-5 overflow-x-auto">
-                <table className="w-full min-w-[760px] text-left text-sm">
-                  <thead className="border-b border-slate-200 text-slate-500"><tr><th className="py-3 pr-4">Listing</th><th className="py-3 pr-4">Agent</th><th className="py-3 pr-4">Views</th><th className="py-3 pr-4">Availability</th><th className="py-3 pr-4">Placement</th><th className="py-3">Action</th></tr></thead>
+                <table className="w-full min-w-[1260px] text-left text-sm">
+                  <thead className="border-b border-slate-200 text-slate-500"><tr><th className="py-3 pr-4">Listing</th><th className="py-3 pr-4">Agent</th><th className="py-3 pr-4">Views</th><th className="py-3 pr-4">Contact Agent clicks</th><th className="py-3 pr-4">Quick WhatsApp clicks</th><th className="py-3 pr-4">Availability</th><th className="py-3 pr-4">Visibility</th><th className="py-3 pr-4">Placement</th><th className="py-3">Actions</th></tr></thead>
                   <tbody>
                     {visibleListings.map((listing) => (
                       <tr key={listing.id} className="border-b border-slate-100 last:border-0">
-                        <td className="py-3 pr-4"><Link href={`/apartments/${listing.slug}`} target="_blank" className="inline-flex items-center gap-1 font-medium text-blue-800 hover:underline">{listing.title}<ArrowUpRight className="h-3.5 w-3.5" /></Link></td>
+                        <td className="py-3 pr-4">{listing.isSuspended ? <span className="font-medium text-slate-900">{listing.title}</span> : <Link href={`/apartments/${listing.slug}`} target="_blank" className="inline-flex items-center gap-1 font-medium text-blue-800 hover:underline">{listing.title}<ArrowUpRight className="h-3.5 w-3.5" /></Link>}</td>
                         <td className="py-3 pr-4 text-slate-600">{listing.agentName || 'Unknown'}</td>
                         <td className="py-3 pr-4">{listing.visitCount.toLocaleString()}</td>
+                        <td className="py-3 pr-4">{listing.contactClick.toLocaleString()}</td>
+                        <td className="py-3 pr-4">{listing.quickWhatsappClick.toLocaleString()}</td>
                         <td className="py-3 pr-4">{listing.isAvailable ? 'Available' : 'Unavailable'}</td>
-                        <td className="py-3 pr-4">{listing.isPromoted ? <span className="font-semibold text-blue-700">Promoted</span> : 'Standard'}</td>
-                        <td className="py-3"><button type="button" disabled={busy === `listing:${listing.id}`} onClick={() => changeStatus(`/api/super-admin/listings/${encodeURIComponent(listing.id)}`, { promoted: !listing.isPromoted }, `listing:${listing.id}`)} className="rounded-xl border border-blue-300 px-3 py-2 font-medium text-blue-800 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50">{busy === `listing:${listing.id}` ? 'Saving...' : listing.isPromoted ? 'Remove boost' : 'Boost listing'}</button></td>
+                        <td className="py-3 pr-4"><span className={listing.isSuspended ? 'font-semibold text-red-700' : 'font-semibold text-emerald-700'}>{listing.isSuspended ? 'Suspended' : 'Visible'}</span></td>
+                        <td className="py-3 pr-4">{listing.isPromoted ? <span className="font-semibold text-blue-700">{listing.isSuspended ? 'Promoted (hidden)' : 'Promoted'}</span> : 'Standard'}</td>
+                        <td className="py-3">
+                          <div className="flex flex-wrap gap-2">
+                            <button type="button" disabled={busy.startsWith(`listing:${listing.id}:`) || (listing.isSuspended && !listing.isPromoted)} onClick={() => changeStatus(`/api/super-admin/listings/${encodeURIComponent(listing.id)}`, { promoted: !listing.isPromoted }, `listing:${listing.id}:boost`)} className="rounded-xl border border-blue-300 px-3 py-2 font-medium text-blue-800 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-50">{busy === `listing:${listing.id}:boost` ? 'Saving...' : listing.isPromoted ? 'Remove boost' : 'Boost listing'}</button>
+                            <button type="button" disabled={busy.startsWith(`listing:${listing.id}:`)} onClick={() => {
+                              if (listing.isSuspended || window.confirm(`Suspend ${listing.title}? It will disappear from public listing pages until restored.`)) {
+                                changeStatus(`/api/super-admin/listings/${encodeURIComponent(listing.id)}`, { suspended: !listing.isSuspended }, `listing:${listing.id}:suspend`);
+                              }
+                            }} className={listing.isSuspended ? 'rounded-xl border border-emerald-300 px-3 py-2 font-medium text-emerald-800 hover:bg-emerald-50 disabled:opacity-50' : 'rounded-xl border border-red-300 px-3 py-2 font-medium text-red-800 hover:bg-red-50 disabled:opacity-50'}>{busy === `listing:${listing.id}:suspend` ? 'Saving...' : listing.isSuspended ? 'Restore listing' : 'Suspend listing'}</button>
+                          </div>
+                        </td>
                       </tr>
                     ))}
                   </tbody>

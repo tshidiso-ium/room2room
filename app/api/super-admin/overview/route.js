@@ -55,11 +55,13 @@ export async function GET(request) {
         agentId: listing.agentId || '',
         agentName: listing.agentName || listing.agent?.name || '',
         isAvailable: listing.isAvailable === true,
+        isSuspended: listing.isSuspended === true,
         isPromoted: listing.isPromoted === true,
         promotedAt: listing.promotedAt?.toDate?.().toISOString() || null,
         createdAt: listing.createdAt?.toDate?.().toISOString() || null,
         visitCount: Number(listing.visitCount || 0),
         contactClick: Number(listing.contactClick || 0),
+        quickWhatsappClick: Number(listing.quickWhatsappClick || 0),
       };
     });
     const stats = statsSnapshot.data() || {};

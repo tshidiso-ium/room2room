@@ -19,11 +19,6 @@ service cloud.firestore {
         changed.hasAll(['visitCount', 'lastVisitedAt']) &&
         request.resource.data.visitCount == resource.data.get('visitCount', 0) + 1 &&
         request.resource.data.lastVisitedAt == request.time
-      ) || (
-        changed.hasOnly(['contactClick', 'lastContactedAt']) &&
-        changed.hasAll(['contactClick', 'lastContactedAt']) &&
-        request.resource.data.contactClick == resource.data.get('contactClick', 0) + 1 &&
-        request.resource.data.lastContactedAt == request.time
       );
     }
 
@@ -31,16 +26,21 @@ service cloud.firestore {
       allow read: if true;
       allow create: if activeAgent() &&
         request.resource.data.agentId == request.auth.uid &&
-        !request.resource.data.keys().hasAny(['isPromoted', 'promotedAt', 'promotedBy']);
-      allow update: if publicListingCounter() || (
+        !request.resource.data.keys().hasAny([
+          'isPromoted', 'promotedAt', 'promotedBy',
+          'isSuspended', 'suspendedAt', 'suspendedBy'
+        ]);
+      allow update: if (resource.data.get('isSuspended', false) != true && publicListingCounter()) || (
         listingOwner() &&
         request.resource.data.agentId == resource.data.agentId &&
         !request.resource.data.diff(resource.data).affectedKeys().hasAny([
           'isPromoted', 'promotedAt', 'promotedBy',
-          'visitCount', 'lastVisitedAt', 'contactClick', 'lastContactedAt'
+          'isSuspended', 'suspendedAt', 'suspendedBy',
+          'visitCount', 'lastVisitedAt', 'contactClick', 'lastContactedAt',
+          'quickWhatsappClick', 'lastQuickWhatsappAt'
         ])
       );
-      allow delete: if listingOwner();
+      allow delete: if listingOwner() && resource.data.get('isSuspended', false) != true;
     }
 
     match /agents/{agentId} {
