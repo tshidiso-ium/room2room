@@ -1,5 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import Script from "next/script";
+import SiteVisitTracker from "@/components/SiteVisitTracker";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -125,6 +126,7 @@ export default function RootLayout({ children }) {
           gtag('js', new Date());
           gtag('config', '${GA_MEASUREMENT_ID}');
         `}</Script>
+        <SiteVisitTracker />
         {children}
       </body>
     </html>

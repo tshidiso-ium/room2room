@@ -15,6 +15,7 @@ import {
   UserRound,
   Eye,
   Flame,
+  Star,
 } from 'lucide-react';
 import { db } from '@/app/lib/firebaseClient';
 import { getListingAgent } from '@/app/lib/agentProfile';
@@ -137,12 +138,29 @@ export default function FeaturedApartments({ filters }) {
           limit(12)
         );
 
-        const snapshot = await getDocs(q);
-
-        const listings = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        const promotedQuery = query(
+          collection(db, 'apartments'),
+          where('isPromoted', '==', true)
+        );
+        const [snapshot, promotedSnapshot] = await Promise.all([
+          getDocs(q),
+          getDocs(promotedQuery).catch((queryError) => {
+            console.error('Unable to load promoted listings:', queryError);
+            return { docs: [] };
+          }),
+        ]);
+        const listingsById = new Map();
+        for (const item of [...snapshot.docs, ...promotedSnapshot.docs]) {
+          const listing = { id: item.id, ...item.data() };
+          if (listing.isAvailable === true) listingsById.set(item.id, listing);
+        }
+        const listings = [...listingsById.values()]
+          .sort((a, b) =>
+            Number(b.isPromoted === true) - Number(a.isPromoted === true) ||
+            Number(b.promotedAt?.seconds || 0) - Number(a.promotedAt?.seconds || 0) ||
+            Number(b.createdAt?.seconds || 0) - Number(a.createdAt?.seconds || 0)
+          )
+          .slice(0, 12);
 
         setApartments(listings);
       } catch (err) {
@@ -300,6 +318,12 @@ export default function FeaturedApartments({ filters }) {
                     {apt.isAvailable && (
                       <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow">
                         Available now
+                      </span>
+                    )}
+                    {apt.isPromoted && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-700 px-3 py-1 text-xs font-semibold text-white shadow">
+                        <Star className="h-3.5 w-3.5" aria-hidden="true" />
+                        Top listing
                       </span>
                     )}
                     {isHotListing(apt.visitCount) && (

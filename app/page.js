@@ -8,8 +8,6 @@ import AppHeader from '@/components/header';
 import SearchBar from '@/components/SearchBar';
 import FeaturedApartments from '@/components/FeaturedApartments';
 import AppFooter from '@/components/footer';
-import { db } from '@/app/lib/firebaseClient';
-import { doc, setDoc, increment, serverTimestamp } from 'firebase/firestore';
 import { Moon, Sun, ShieldCheck, MapPinHouse, Sparkles, UserPlus, Building2, Eye, ArrowRight } from 'lucide-react';
 
 const SITE_URL = 'https://www.tembisaroomfinders.co.za';
@@ -63,24 +61,6 @@ export default function HomePage() {
       document.documentElement.classList.remove('dark');
     }
   };
-
-  useEffect(() => {
-    const trackVisit = async () => {
-      const ref = doc(db, 'stats', 'site');
-      await setDoc(
-        ref,
-        {
-          visitCount: increment(1),
-          lastVisitedAt: serverTimestamp(),
-        },
-        { merge: true }
-      );
-    };
-
-    trackVisit().catch((err) => {
-      console.error('Failed to track visit:', err);
-    });
-  }, []);
 
   const structuredData = useMemo(
     () => ({

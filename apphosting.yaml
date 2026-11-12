@@ -8,7 +8,11 @@ runConfig:
   # memoryMiB: 512
 
 # Environment variables and secrets.
-# env:
+env:
+  - variable: SUPER_ADMIN_EMAILS
+    value: tshidisomodiko@gmail.com
+    availability:
+      - RUNTIME
   # Configure environment variables.
   # See https://firebase.google.com/docs/app-hosting/configure#user-defined-environment
   # - variable: MESSAGE

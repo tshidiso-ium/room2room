@@ -80,7 +80,8 @@ export default function AdminLogin() {
        await upsertAgentProfile(credential.user);
       }
        console.log("about to go to dashboard");
-      router.push('/admin/dashboard');
+      const next = new URLSearchParams(window.location.search).get('next');
+      router.push(next === '/super-admin' ? next : '/admin/dashboard');
     } catch (err) {
       console.error(err);
       setError(
