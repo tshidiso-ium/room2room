@@ -52,6 +52,7 @@ export default function AdminLogin() {
     setLoading(true);
 
     try {
+      let signedInUser;
       if (isSignup) {
         const credential = await createUserWithEmailAndPassword(
           auth,
@@ -69,6 +70,7 @@ export default function AdminLogin() {
           phone,
           email,
         });
+        signedInUser = credential.user;
 
       } else {
         const credential = await signInWithEmailAndPassword(
@@ -76,11 +78,29 @@ export default function AdminLogin() {
           email.trim(),
           password
         );
-
-       await upsertAgentProfile(credential.user);
+        signedInUser = credential.user;
       }
-       console.log("about to go to dashboard");
-      router.push('/admin/dashboard');
+
+      const next = new URLSearchParams(window.location.search).get('next');
+      let destination = next === '/super-admin' ? '/super-admin' : '/admin/dashboard';
+      if (destination !== '/super-admin') {
+        try {
+          const token = await signedInUser.getIdToken();
+          const response = await fetch('/api/super-admin/status', {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          const status = await response.json();
+          if (response.ok || status.emailVerificationRequired) {
+            destination = '/super-admin';
+          }
+        } catch (statusError) {
+          console.error('Could not check super admin access:', statusError);
+        }
+      }
+      if (destination === '/admin/dashboard' && !isSignup) {
+        await upsertAgentProfile(signedInUser);
+      }
+      router.push(destination);
     } catch (err) {
       console.error(err);
       setError(

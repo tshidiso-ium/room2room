@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { collection, getDocs, limit, orderBy, query, where } from 'firebase/firestore';
+import { collection, getDocs, limit, orderBy, query, startAfter, where } from 'firebase/firestore';
 import {
   MapPin,
   BedDouble,
@@ -15,6 +15,7 @@ import {
   UserRound,
   Eye,
   Flame,
+  Star,
 } from 'lucide-react';
 import { db } from '@/app/lib/firebaseClient';
 import { getListingAgent } from '@/app/lib/agentProfile';
@@ -137,12 +138,48 @@ export default function FeaturedApartments({ filters }) {
           limit(12)
         );
 
-        const snapshot = await getDocs(q);
+        const promotedQuery = query(
+          collection(db, 'apartments'),
+          where('isPromoted', '==', true)
+        );
+        const [snapshot, promotedSnapshot] = await Promise.all([
+          getDocs(q),
+          getDocs(promotedQuery).catch((queryError) => {
+            console.error('Unable to load promoted listings:', queryError);
+            return { docs: [] };
+          }),
+        ]);
+        const listingsById = new Map();
+        const addVisibleListings = (docs) => {
+          for (const item of docs) {
+            const listing = { id: item.id, ...item.data() };
+            if (listing.isAvailable === true && listing.isSuspended !== true) {
+              listingsById.set(item.id, listing);
+            }
+          }
+        };
+        addVisibleListings(snapshot.docs);
+        addVisibleListings(promotedSnapshot.docs);
 
-        const listings = snapshot.docs.map((doc) => ({
-          id: doc.id,
-          ...doc.data(),
-        }));
+        let latestPage = snapshot;
+        while (listingsById.size < 12 && latestPage.docs.length === 12) {
+          const nextPageQuery = query(
+            collection(db, 'apartments'),
+            where('isAvailable', '==', true),
+            orderBy('createdAt', 'desc'),
+            startAfter(latestPage.docs[latestPage.docs.length - 1]),
+            limit(12)
+          );
+          latestPage = await getDocs(nextPageQuery);
+          addVisibleListings(latestPage.docs);
+        }
+        const listings = [...listingsById.values()]
+          .sort((a, b) =>
+            Number(b.isPromoted === true) - Number(a.isPromoted === true) ||
+            Number(b.promotedAt?.seconds || 0) - Number(a.promotedAt?.seconds || 0) ||
+            Number(b.createdAt?.seconds || 0) - Number(a.createdAt?.seconds || 0)
+          )
+          .slice(0, 12);
 
         setApartments(listings);
       } catch (err) {
@@ -300,6 +337,12 @@ export default function FeaturedApartments({ filters }) {
                     {apt.isAvailable && (
                       <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-semibold text-white shadow">
                         Available now
+                      </span>
+                    )}
+                    {apt.isPromoted && (
+                      <span className="inline-flex items-center gap-1 rounded-full bg-blue-700 px-3 py-1 text-xs font-semibold text-white shadow">
+                        <Star className="h-3.5 w-3.5" aria-hidden="true" />
+                        Top listing
                       </span>
                     )}
                     {isHotListing(apt.visitCount) && (

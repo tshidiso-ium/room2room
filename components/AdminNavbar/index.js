@@ -14,6 +14,7 @@ import {
   Menu,
   X,
   Home,
+  ShieldCheck,
 } from 'lucide-react';
 
 const navItems = [
@@ -43,6 +44,7 @@ export default function AdminNavbar() {
   const [loggingOut, setLoggingOut] = useState(false);
   const [checkingSession, setCheckingSession] = useState(true);
   const [user, setUser] = useState(null);
+  const [hasSuperAdminAccess, setHasSuperAdminAccess] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -74,6 +76,27 @@ export default function AdminNavbar() {
     return () => unsubscribe();
   }, [auth, router]);
 
+  useEffect(() => {
+    if (!user) {
+      setHasSuperAdminAccess(false);
+      return;
+    }
+
+    let active = true;
+    user.getIdToken()
+      .then((token) => fetch('/api/super-admin/status', {
+        headers: { Authorization: `Bearer ${token}` },
+      }))
+      .then((response) => {
+        if (active) setHasSuperAdminAccess(response.ok);
+      })
+      .catch(() => {
+        if (active) setHasSuperAdminAccess(false);
+      });
+
+    return () => { active = false; };
+  }, [user]);
+
   const handleLogout = async () => {
     try {
       setLoggingOut(true);
@@ -95,7 +118,10 @@ export default function AdminNavbar() {
   const isActive = (href) => pathname === href;
 
   const visibleNavItems = user
-  ? navItems
+  ? [
+      ...navItems,
+      ...(hasSuperAdminAccess ? [{ label: 'Super admin', href: '/super-admin', icon: ShieldCheck }] : []),
+    ]
   : [
       {
         label: 'Return Home',

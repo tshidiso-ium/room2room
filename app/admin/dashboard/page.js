@@ -121,6 +121,10 @@ export default function AdminDashboard() {
       alert('You can only delete listings posted from your agent profile.');
       return;
     }
+    if (listing.isSuspended === true) {
+      alert('This listing was suspended by the site admin and cannot be deleted here.');
+      return;
+    }
 
     const confirmed = window.confirm(
       'Are you sure you want to permanently delete this listing?'
@@ -157,12 +161,14 @@ export default function AdminDashboard() {
         suburb.includes(query) ||
         locationString.includes(query);
 
-      const available = apt.isAvailable === true;
+      const suspended = apt.isSuspended === true;
+      const available = apt.isAvailable === true && !suspended;
 
       const matchesStatus =
         statusFilter === 'all' ||
         (statusFilter === 'available' && available) ||
-        (statusFilter === 'unavailable' && !available);
+        (statusFilter === 'unavailable' && !suspended && !apt.isAvailable) ||
+        (statusFilter === 'suspended' && suspended);
 
       return matchesSearch && matchesStatus;
     });
@@ -183,8 +189,9 @@ export default function AdminDashboard() {
 
   const stats = useMemo(() => {
     const total = apartments.length;
-    const available = apartments.filter((apt) => apt.isAvailable === true).length;
-    const unavailable = total - available;
+    const available = apartments.filter((apt) => apt.isAvailable === true && apt.isSuspended !== true).length;
+    const unavailable = apartments.filter((apt) => apt.isAvailable !== true && apt.isSuspended !== true).length;
+    const suspended = apartments.filter((apt) => apt.isSuspended === true).length;
     const views = apartments.reduce((sum, apt) => sum + (Number(apt.visitCount) || 0), 0);
 
     const avgPrice =
@@ -194,7 +201,7 @@ export default function AdminDashboard() {
           )
         : 0;
 
-    return { total, available, unavailable, views, avgPrice };
+    return { total, available, unavailable, suspended, views, avgPrice };
   }, [apartments]);
 
   if (!user && loading) {
@@ -262,7 +269,7 @@ export default function AdminDashboard() {
           </div>
         </section>
 
-        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-5">
+        <section className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-6">
           <StatCard
             title="Your listings"
             value={stats.total}
@@ -276,6 +283,11 @@ export default function AdminDashboard() {
           <StatCard
             title="Unavailable"
             value={stats.unavailable}
+            icon={<Eye className="h-5 w-5" />}
+          />
+          <StatCard
+            title="Suspended"
+            value={stats.suspended}
             icon={<Eye className="h-5 w-5" />}
           />
           <StatCard
@@ -325,6 +337,7 @@ export default function AdminDashboard() {
                   <option value="all">All listings</option>
                   <option value="available">Available only</option>
                   <option value="unavailable">Unavailable only</option>
+                  <option value="suspended">Suspended only</option>
                 </select>
               </div>
             </div>
@@ -420,10 +433,10 @@ export default function AdminDashboard() {
                       <div className="absolute left-4 top-4 flex gap-2">
                         <span
                           className={`rounded-full px-3 py-1 text-xs font-semibold text-white shadow ${
-                            apt.isAvailable ? 'bg-emerald-500' : 'bg-slate-500'
+                            apt.isSuspended ? 'bg-red-600' : apt.isAvailable ? 'bg-emerald-500' : 'bg-slate-500'
                           }`}
                         >
-                          {apt.isAvailable ? 'Available' : 'Unavailable'}
+                          {apt.isSuspended ? 'Suspended' : apt.isAvailable ? 'Available' : 'Unavailable'}
                         </span>
 
                         {apt.propertyType && (
@@ -471,6 +484,12 @@ export default function AdminDashboard() {
                         </span>
                       </div>
 
+                      {apt.isSuspended === true && (
+                        <p className="mt-4 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-300">
+                          Suspended by the site admin. This listing is hidden from visitors until restored.
+                        </p>
+                      )}
+
                       <div className="mt-5 border-t border-slate-100 pt-4 dark:border-slate-800">
                         <p className="text-xs uppercase tracking-wide text-slate-500 dark:text-slate-400">
                           Monthly price
@@ -481,14 +500,21 @@ export default function AdminDashboard() {
                       </div>
 
                       <div className="mt-5 grid grid-cols-3 gap-2">
-                        <Link
-                          href={`/apartments/${apt.slug || apt.id}`}
-                          target="_blank"
-                          className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
-                        >
-                          <Eye className="h-4 w-4" />
-                          View
-                        </Link>
+                        {apt.isSuspended ? (
+                          <span className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-200 px-3 py-2 text-sm text-slate-400 dark:border-slate-700">
+                            <Eye className="h-4 w-4" />
+                            Hidden
+                          </span>
+                        ) : (
+                          <Link
+                            href={`/apartments/${apt.slug || apt.id}`}
+                            target="_blank"
+                            className="inline-flex items-center justify-center gap-2 rounded-2xl border border-slate-300 px-3 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-50 dark:border-slate-700 dark:text-slate-200 dark:hover:bg-slate-800"
+                          >
+                            <Eye className="h-4 w-4" />
+                            View
+                          </Link>
+                        )}
 
                         <Link
                           href={`/admin/edit?id=${apt.id}`}
@@ -501,7 +527,7 @@ export default function AdminDashboard() {
                         <button
                           type="button"
                           onClick={() => handleDelete(apt.id)}
-                          disabled={deletingId === apt.id}
+                          disabled={deletingId === apt.id || apt.isSuspended === true}
                           className="inline-flex items-center justify-center gap-2 rounded-2xl bg-red-600 px-3 py-2 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-70"
                         >
                           <Trash2 className="h-4 w-4" />

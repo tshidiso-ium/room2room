@@ -9,9 +9,7 @@ import {
 import { db } from '@/app/lib/firebaseClient';
 import ApartmentDetailClient from './ApartmentDetailClient';
 
-export const revalidate = 60;
-export const dynamic = 'force-static';
-export const dynamicParams = true;
+export const dynamic = 'force-dynamic';
 
 function serializeApartment(doc) {
   const data = doc.data();
@@ -41,15 +39,11 @@ async function getApartmentBySlug(slug) {
 
   const snapshot = await getDocs(q);
 
-  if (snapshot.empty) {
+  if (snapshot.empty || snapshot.docs[0].data().isSuspended === true) {
     return null;
   }
 
   return serializeApartment(snapshot.docs[0]);
-}
-
-export async function generateStaticParams() {
-  return [];
 }
 
 export default async function ApartmentPage({ params }) {
